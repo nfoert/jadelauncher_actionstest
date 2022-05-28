@@ -15,17 +15,18 @@ import sys
 import datetime
 from time import sleep
 import random
-from pathlib import PurePath
+from pathlib import PurePath, Path
 import os
 import platform
 import webbrowser
+import threading
 
 
 
 # Third Party Imports
 from PyQt5 import QtWidgets, uic, QtCore, QtGui
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import QUrl
+from PyQt5.QtCore import QUrl, QTimer
 from PyQt5.QtWebEngineWidgets import *
 import requests
 import pwnedpasswords
@@ -40,12 +41,20 @@ import assets
 
 Version_MAJOR = 0
 Version_MINOR = 0
-Version_PATCH = 6
+Version_PATCH = 7
 SignedIn = False
 expanded = "0"
 developmental = False
 
+downloadJadeAssistantVar = False
+updateJadeAssistantVar = False
+guiLoopList = []
+killThreads = False
 
+
+# ----------
+# Set up the resource manager
+# ----------
 
 def resource_path(relative_path):
     try:
@@ -631,6 +640,7 @@ class UTILITYFuncs:
 
     def error(Error):
         window_main.hide()
+        window_jadeAssistantMenu.hide()
         dialog_error.ERROR.setText(Error)
         dialog_error.ERROR.setFont(QFont("Calibri", 14))
         dialog_error.show()
@@ -745,13 +755,14 @@ class MAINFuncs:
                     print("Now updating... First going to remove the updater - if it exists")
                     try:
                         if platform.system() == "Windows":
-                            os.remove("jadeLauncherUpdater.exe")
+                            os.remove("Jade Launcher Updater.exe")
 
                         elif platform.system() == "Darwin":
-                            os.remove("jadeLauncherUpdater")
+                            os.remove("Jade Launcher Updater")
 
                         else:
                             print("Your OS isn't supported.")
+                            UTILITYFuncs.error("Hey there! Your OS isn't supported. Please install the Launcher for Windows or Mac from my website, 'https://nofoert.wixsite.com/jade/download'")
 
                     except OSError as e:
                         print(f"The updater dosen't seem to exist. {e}")
@@ -1176,12 +1187,262 @@ class MAINFuncs:
         window_main.welcomeBox_text.setFont(QFont("Calibri Bold", 16))
         window_main.welcomeBox_text.setAlignment(QtCore.Qt.AlignCenter)
 
+        # Check if Jade Assistant exists, or needs an update.
+
+        jadeAssistantWindows = Path("Jade Assistant.exe").exists()
+        jadeAssistantMac = Path("Jade Assistant").exists()
+        if jadeAssistantWindows == True or jadeAssistantMac == True:
+            print("Jade Assistant exists!")
+            # It exists! Now check for existance of version file
+            jadeAssistantVersionFileExists = Path("jadeAssistantVersion.txt").exists()
+            if jadeAssistantVersionFileExists == True:
+                #It exists! Now check for updates
+                jadeAssistantVersionFile = open("jadeAssistantVersion.txt", "r")
+                jadeAssistantVersionFileContents = jadeAssistantVersionFile.readlines()
+                jadeAssistantVersion_MAJOR = jadeAssistantVersionFileContents[0]
+                jadeAssistantVersion_MINOR = jadeAssistantVersionFileContents[1]
+                jadeAssistantVersion_PATCH = jadeAssistantVersionFileContents[2]
+
+                try:
+                    jadeAssistantVersionFromServer = requests.get("https://nfoert.pythonanywhere.com/jade/jadeAssistantVersion")
+                    jadeAssistantVersionFromServer.raise_for_status()
+
+                except:
+                    print("There was a problem checking Jade Assistant for updates!")
+                    window_jadeAssistantMenu.launchButton.show()
+                    window_jadeAssistantMenu.updateButton.hide()
+                    window_jadeAssistantMenu.downloadButton.hide()
+                    window_jadeAssistantMenu.removeButton.show()
+
+                javfsMAJOR = UTILITYFuncs.substring(jadeAssistantVersionFromServer.text, "major=", ",minor")
+                javfsMINOR = UTILITYFuncs.substring(jadeAssistantVersionFromServer.text, "minor=", ",patch")
+                javfsPATCH = UTILITYFuncs.substring(jadeAssistantVersionFromServer.text, "patch=", "&")
+
+                
+
+                if jadeAssistantVersion_MAJOR < javfsMAJOR:
+                    # Updates required
+                    window_jadeAssistantMenu.launchButton.hide()
+                    window_jadeAssistantMenu.updateButton.show()
+                    window_jadeAssistantMenu.downloadButton.hide()
+                    window_jadeAssistantMenu.removeButton.show()
+                    print(f"Updates required. {jadeAssistantVersion_MAJOR} < {javfsMAJOR}")
+                    window_jadeAssistantMenu.version.setText(f"Update to version {javfsMAJOR}.{javfsMINOR}.{javfsPATCH}")
+
+                elif jadeAssistantVersion_MINOR < javfsMINOR:
+                    # Updates required
+                    window_jadeAssistantMenu.launchButton.hide()
+                    window_jadeAssistantMenu.updateButton.show()
+                    window_jadeAssistantMenu.downloadButton.hide()
+                    window_jadeAssistantMenu.removeButton.show()
+                    print(f"Updates required. {jadeAssistantVersion_MINOR} < {javfsMINOR}")
+                    window_jadeAssistantMenu.version.setText(f"Update to version {javfsMAJOR}.{javfsMINOR}.{javfsPATCH}")
+
+                elif jadeAssistantVersion_PATCH < javfsPATCH:
+                    # Updates required
+                    window_jadeAssistantMenu.launchButton.hide()
+                    window_jadeAssistantMenu.updateButton.show()
+                    window_jadeAssistantMenu.downloadButton.hide()
+                    window_jadeAssistantMenu.removeButton.show()
+                    print(f"Updates required. {jadeAssistantVersion_PATCH} < {javfsPATCH}")
+                    window_jadeAssistantMenu.version.setText(f"Update to version {javfsMAJOR}.{javfsMINOR}.{javfsPATCH}")
+
+                else:
+                    # Updates not required
+                    window_jadeAssistantMenu.launchButton.show()
+                    window_jadeAssistantMenu.updateButton.hide()
+                    window_jadeAssistantMenu.downloadButton.hide()
+                    window_jadeAssistantMenu.removeButton.show()
+                    print("Updates not required.")
+                    window_jadeAssistantMenu.version.setText(f"Version {javfsMAJOR}.{javfsMINOR}.{javfsPATCH}")
+                        
+
+        elif jadeAssistantWindows == False or jadeAssistantMac == False:
+            # It dosen't exist! Show button for downloading.
+            print("Jade Assistant dosen't exist!")
+            window_jadeAssistantMenu.launchButton.hide()
+            window_jadeAssistantMenu.updateButton.hide()
+            window_jadeAssistantMenu.downloadButton.show()
+            window_jadeAssistantMenu.removeButton.hide()
+            window_jadeAssistantMenu.version.setText(f"Download version {javfsMAJOR}.{javfsMINOR}.{javfsPATCH}")
+
+        else:
+            #Unable to tell if it exists or not
+            UTILITYFuncs.error("Unable to tell if Jade Assistant exists or not!")
+
+        window_jadeAssistantMenu.version.setAlignment(QtCore.Qt.AlignCenter)
+
         print("=================================")
         print("THREADFuncs/mainCode/: Finished! ")
         print("=================================")
             
 
+class THREADFuncs:
+    def __init__(self):
+        pass
 
+    def downloadJadeAssistant():
+        global downloadJadeAssistantVar
+        global guiLoopList
+        global killThreads
+        while True:
+            if downloadJadeAssistantVar == True:
+                guiLoopList.append('window_jadeAssistantMenu.launchButton.hide()')
+                guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
+                guiLoopList.append('window_jadeAssistantMenu.downloadButton.show()')
+                guiLoopList.append('window_jadeAssistantMenu.removeButton.hide()')
+                guiLoopList.append('window_jadeAssistantMenu.downloadButton.setEnabled(False)')
+                guiLoopList.append('window_jadeAssistantMenu.downloadButton.setText("Downloading...")')
+                if platform.system() == "Windows":
+                    try:
+                        print("Downloading Jade Assistant!")
+                        jadeAssistantDownload = requests.get("https://github.com/nfoert/jadeassistant/raw/main/Jade%20Assistant.exe")
+                        jadeAssistantDownload.raise_for_status()
+                        guiLoopList.append('window_jadeAssistantMenu.updateButton.setText("Saving...")')
+                        jadeAssistant = open("Jade Assistant.exe", "wb")
+                        for chunk in jadeAssistantDownload.iter_content(100000):
+                            jadeAssistant.write(chunk)
+
+                        jadeAssistant.close()
+                        downloadJadeAssistantVar = False
+                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
+                        guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
+                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
+                        print("Done downloading Jade Assistant!")
+
+                    except Exception as e:
+                        print(f"There was a problem downloading Jade Assistant! {e}")
+                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
+                        guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.show()')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setEnabled(False)')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setText("There was a problem.")')
+                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
+
+                elif platform.system() == "Darwin":
+                    try:
+                        jadeAssistantDownload = requests.get("https://github.com/nfoert/jadeassistant/raw/main/Jade%20Assistant")
+                        jadeAssistantDownload.raise_for_status()
+                        guiLoopList.append('window_main.updateButton.setText("Saving...")')
+                        jadeAssistant = open("Jade Assistant", "wb")
+                        for chunk in jadeAssistantDownload.iter_content(100000):
+                            jadeAssistant.write(chunk)
+
+                        jadeAssistant.close()
+                        downloadJadeAssistantVar = False
+                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
+                        guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
+                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
+
+                    except Exception as e:
+                        print(f"There was a problem downloading Jade Assistant! {e}")
+                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
+                        guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.show()')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setEnabled(False)')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setText("There was a problem.")')
+                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
+
+                else:
+                    print("Your OS isn't supported!")
+                    UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac or Windows.")
+
+            elif killThreads == True:
+                return False
+
+            else:
+                sleep(1)
+                continue
+
+    def updateJadeAssistant():
+        global updateJadeAssistantVar
+        global guiLoopList
+        global killThreads
+        while True:
+            if updateJadeAssistantVar == True:
+                print("Updating Jade Assistant...")
+                guiLoopList.append('window_jadeAssistantMenu.launchButton.hide()')
+                guiLoopList.append('window_jadeAssistantMenu.updateButton.show()')
+                guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
+                guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
+                guiLoopList.append('window_jadeAssistantMenu.updateButton.setEnabled(False)')
+                guiLoopList.append('window_jadeAssistantMenu.updateButton.setText("Downloading...")')
+                if platform.system() == "Windows":
+                    try:
+                        os.remove("Jade Assistant.exe")
+                        jadeAssistantDownload = requests.get("https://github.com/nfoert/jadeassistant/raw/main/Jade%20Assistant.exe")
+                        jadeAssistantDownload.raise_for_status()
+                        guiLoopList.append('window_jadeAssistantMenu.updateButton.setText("Saving...")')
+                        jadeAssistant = open("Jade Assistant.exe", "wb")
+                        for chunk in jadeAssistantDownload.iter_content(100000):
+                            jadeAssistant.write(chunk)
+
+                        jadeAssistant.close()
+                        updateJadeAssistantVar = False
+                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
+                        guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
+                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
+                        print("Done updating Jade Assistant.")
+
+                    except Exception as e:
+                        print(f"There was a problem updating Jade Assistant! {e}")
+                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
+                        guiLoopList.append('window_jadeAssistantMenu.updateButton.show()')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setEnabled(False)')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setText("There was a problem.")')
+                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
+
+                elif platform.system() == "Darwin":
+                    try:
+                        os.remove("Jade Assistant")
+                        jadeAssistantDownload = requests.get("https://github.com/nfoert/jadeassistant/raw/main/Jade%20Assistant")
+                        jadeAssistantDownload.raise_for_status()
+                        guiLoopList.append('window_jadeAssistantMenu.updateButton.setText("Saving...")')
+                        jadeAssistant = open("Jade Assistant", "wb")
+                        for chunk in jadeAssistantDownload.iter_content(100000):
+                            jadeAssistant.write(chunk)
+
+                        jadeAssistant.close()
+                        updateJadeAssistantVar = False
+                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
+                        guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
+                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
+                        print("Done updating Jade Assistant.")
+
+                    except Exception as e:
+                        print(f"There was a problem updating Jade Assistant! {e}")
+                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
+                        guiLoopList.append('window_jadeAssistantMenu.updateButton.show()')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setEnabled(False)')
+                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setText("There was a problem.")')
+                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
+
+                else:
+                    print("Your OS isn't supported!")
+                    UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac or Windows.")
+
+            elif killThreads == True:
+                return False
+
+            else:
+                sleep(1)
+                continue
+
+# -----
+# Setup threads
+# ----
+downloadJadeAssistantThread = threading.Thread(target=THREADFuncs.downloadJadeAssistant)
+updateJadeAssistantThread = threading.Thread(target=THREADFuncs.updateJadeAssistant)
+
+downloadJadeAssistantThread.start()
+updateJadeAssistantThread.start()
+                    
 
 
 class UIFuncs:
@@ -1239,6 +1500,8 @@ class UIFuncs:
         window_jadeBar.show()
 
     def stopAll():
+        global killThreads
+        killThreads = True
         sys.exit()
 
     def signInButton():
@@ -1281,6 +1544,8 @@ class UIFuncs:
         myAccount.createAccount()
 
     def suspendedQuit():
+        global killThreads
+        killThreads = True
         sys.exit()
 
     def suspendedLogOut():
@@ -1335,6 +1600,8 @@ class UIFuncs:
             UTILITYFuncs.log("WARN", "There was a problem determinign what news article to open a url for.")
 
     def quitErrorDialog():
+        global killThreads
+        killThreads = True
         dialog_error.hide()
         sys.exit()
 
@@ -1356,6 +1623,62 @@ class UIFuncs:
             except Exception as e:
                 print("There was a problem restarting.")
                 UTILITYFuncs.error(f"There was a problem restarting. {e}")
+
+    def downloadJadeAssistant():
+        print("Download button pressed for Jade Assistant!")
+        global downloadJadeAssistantVar
+        downloadJadeAssistantVar = True
+
+    def updateJadeAssistant():
+        print("Update button pressed for Jade Assistant!")
+        global updateJadeAssistantVar
+        updateJadeAssistantVar = True
+
+    def launchJadeAssistant():
+        global killThreads
+        try:
+            if platform.system() == "Windows":
+                subprocess.Popen("Jade Assistant.exe")
+                killThreads = True
+                sys.exit()
+                
+            elif platform.system() == "Darwin":
+                subprocess.Popen("Jade Assistant")
+                killThreads = True
+                sys.exit()
+                
+            else:
+                print("Your OS isn't supported!")
+                UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac OS or Windows.")
+
+        except Exception as e:
+            UTILITYFuncs.error(f"There was a problem launching Jade Assistant! {e}")
+
+    def removeJadeAssistant():
+        try:
+            if platform.system() == "Windows":
+                os.system('taskkill /F /IM "Jade Assistant.exe"')
+                os.remove("Jade Assistant.exe")
+                guiLoopList.append('window_jadeAssistantMenu.launchButton.hide()')
+                guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
+                guiLoopList.append('window_jadeAssistantMenu.downloadButton.show()')
+                guiLoopList.append('window_jadeAssistantMenu.removeButton.hide()')
+
+            elif platform.system() == "Darwin":
+                os.system('killall "Jade Assistant.exe"')
+                os.remove("Jade Assistant")
+                guiLoopList.append('window_jadeAssistantMenu.launchButton.hide()')
+                guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
+                guiLoopList.append('window_jadeAssistantMenu.downloadButton.show()')
+                guiLoopList.append('window_jadeAssistantMenu.removeButton.hide()')
+
+            else:
+                print("Your OS isn't supported!")
+                UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac OS or Windows.")
+
+        except Exception as e:
+            UTILITYFuncs.error(f"There was a problem removing Jade Assistant! {e}")
+
     
 
 # ----------
@@ -1493,6 +1816,11 @@ window_webView.reload.clicked.connect(WEBVIEW.reload)
 window_webView.web.loadFinished.connect(WEBVIEW.doneLoading)
 window_webView.web.loadStarted.connect(WEBVIEW.startLoading)
 
+# Jade Assistant menu
+window_jadeAssistantMenu.launchButton.clicked.connect(UIFuncs.launchJadeAssistant)
+window_jadeAssistantMenu.downloadButton.clicked.connect(UIFuncs.downloadJadeAssistant)
+window_jadeAssistantMenu.updateButton.clicked.connect(UIFuncs.updateJadeAssistant)
+window_jadeAssistantMenu.removeButton.clicked.connect(UIFuncs.removeJadeAssistant)
 
 # -----
 # Set properties of windows
@@ -1524,7 +1852,22 @@ news3 = News("loading", "loading", "loading", "loading", "3")
 
 Launcher = LauncherId("loading", "loading") 
 
+def guiLoop():
+    global guiLoopList
+    if len(guiLoopList) >= 1:
+        try:
+            print(f"Running code '{guiLoopList[0]}'")
+            exec(guiLoopList[0])
+            guiLoopList.remove(guiLoopList[0])
 
+        except Exception as e:
+            print(f"There was a problem running some code! {e}")
+            guiLoopList.remove(guiLoopList[0])
+            UTILITYFuncs.error(f"The gui loop had a problem running some code! '{e}'")
+
+guiLoopTimer = QTimer()
+guiLoopTimer.timeout.connect(guiLoop)
+guiLoopTimer.start(100)
 
 firstGC = UTILITYFuncs.getConnection("main")
 if firstGC == True:

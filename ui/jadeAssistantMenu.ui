@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>378</width>
-    <height>434</height>
+    <height>457</height>
    </rect>
   </property>
   <property name="acceptDrops">
@@ -46,6 +46,12 @@
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>180</width>
+                <height>120</height>
+               </size>
               </property>
               <property name="maximumSize">
                <size>
@@ -132,7 +138,7 @@
            </font>
           </property>
           <property name="text">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Jade is a virtual assistant for your computer's desktop. With a simple interface and easy keybinds, Jade can help you - while not being in your way.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Jade is a virtual assistant for your computer's desktop. Features very simple controls and a light system load.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="wordWrap">
            <bool>true</bool>
@@ -361,7 +367,7 @@
              </font>
             </property>
             <property name="statusTip">
-             <string>Delete Jade Assistant from your device, including all settings and logs.</string>
+             <string>Delete Jade Assistant from your device.</string>
             </property>
             <property name="styleSheet">
              <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0.744, y2:0.824409, stop:0 rgba(255, 54, 0, 255), stop:0.772727 rgba(255, 230, 230, 255));</string>
@@ -385,6 +391,13 @@
            </spacer>
           </item>
          </layout>
+        </item>
+        <item>
+         <widget class="QLabel" name="version">
+          <property name="text">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Version: Loading...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
