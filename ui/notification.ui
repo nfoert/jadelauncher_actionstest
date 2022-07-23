@@ -10,8 +10,30 @@
     <height>177</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>336</width>
+    <height>177</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>336</width>
+    <height>177</height>
+   </size>
+  </property>
   <property name="windowTitle">
-   <string>Jade Launcher</string>
+   <string>Jade Launcher | Notification</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../assets.qrc">
+    <normaloff>:/images/assets/jadeIcon.png</normaloff>:/images/assets/jadeIcon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QLabel" name="label">
@@ -22,6 +44,18 @@
       <width>91</width>
       <height>61</height>
      </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>91</width>
+      <height>61</height>
+     </size>
     </property>
     <property name="text">
      <string/>
@@ -41,6 +75,12 @@
       <width>201</width>
       <height>41</height>
      </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
     </property>
     <property name="font">
      <font>
@@ -103,14 +143,14 @@
      </font>
     </property>
     <property name="text">
-     <string>Open the Jade Launcher</string>
+     <string>Ok</string>
     </property>
    </widget>
   </widget>
  </widget>
  <resources>
   <include location="../assets.qrc"/>
-  <include location="assets.qrc"/>
+  <include location="../assets.qrc"/>
  </resources>
  <connections/>
 </ui>

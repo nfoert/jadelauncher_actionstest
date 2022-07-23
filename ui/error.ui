@@ -148,7 +148,7 @@
           </font>
          </property>
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;If you can't figure out what happened, please email me at &lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;nofoert@gmail.com&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;If you can't figure out what happened, please open an issue on my GitHub. &lt;/span&gt;&lt;span style=&quot; font-weight:600; font-style:italic;&quot;&gt;(https://github.com/nfoert/jadelauncher)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>

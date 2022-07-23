@@ -6,15 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>378</width>
-    <height>457</height>
+    <width>413</width>
+    <height>408</height>
    </rect>
   </property>
-  <property name="acceptDrops">
-   <bool>true</bool>
-  </property>
   <property name="windowTitle">
-   <string>Jade Launcher | Jade Assistant Menu</string>
+   <string>Jade Launcher</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../assets.qrc">
@@ -67,7 +64,7 @@
                <string/>
               </property>
               <property name="pixmap">
-               <pixmap resource="../assets.qrc">:/images/assets/jadeAssistant.png</pixmap>
+               <pixmap resource="../assets.qrc">:/images/assets/JadeLauncherLogo.png</pixmap>
               </property>
               <property name="scaledContents">
                <bool>true</bool>
@@ -142,7 +139,7 @@
            </font>
           </property>
           <property name="text">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Jade is a virtual assistant for your computer's desktop. Features very simple controls and a light system load.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;[Description Loading...]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="wordWrap">
            <bool>true</bool>
@@ -150,6 +147,40 @@
          </widget>
         </item>
        </layout>
+      </item>
+      <item alignment="Qt::AlignHCenter">
+       <widget class="QProgressBar" name="progressBar">
+        <property name="minimumSize">
+         <size>
+          <width>300</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>300</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="maximum">
+         <number>100</number>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignHCenter|Qt::AlignTop</set>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="textDirection">
+         <enum>QProgressBar::TopToBottom</enum>
+        </property>
+        <property name="format">
+         <string>[%p%]</string>
+        </property>
+       </widget>
       </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -191,7 +222,7 @@
              </font>
             </property>
             <property name="statusTip">
-             <string>Launch Jade Assistant</string>
+             <string>Launch the app</string>
             </property>
             <property name="text">
              <string>Launch</string>
@@ -254,7 +285,7 @@
              </font>
             </property>
             <property name="statusTip">
-             <string>Download Jade Assistant</string>
+             <string>Downl</string>
             </property>
             <property name="text">
              <string>Download</string>
@@ -409,11 +440,13 @@
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources>
   <include location="../assets.qrc"/>
   <include location="../assets.qrc"/>
  </resources>
  <connections/>
+ <slots>
+  <slot>setWindowFlags()</slot>
+ </slots>
 </ui>

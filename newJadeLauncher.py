@@ -1,8 +1,15 @@
 '''
 Jade Launcher (NEW)
-The Jade Launcher is what launches apps like Jade Assistant, where you can buy apps from the Jade Store,
+The Jade Launcher is what launches, updates and downloads apps like Jade Assistant,
 and where you can manage your Jade Account.
+
+The Jade Launcher went through another iteration before this one. The previous one used guizero (https://lawsie.github.io/guizero/about/)
+which is an incredible and easy to use GUI library. Guizero treated me well but I began to require more features which made me decide
+to switch to PyQt5. (https://pypi.org/project/PyQt5/) Unfortunately, that was such a large change so I decided to start the Launcher over.
+
+Jade Software was built by a teenager over nearly a year and a half.
 '''
+
 
 # ----------
 # Imports
@@ -20,8 +27,7 @@ import os
 import platform
 import webbrowser
 import threading
-
-
+import sys
 
 # Third Party Imports
 from PyQt5 import QtWidgets, uic, QtCore, QtGui
@@ -30,10 +36,10 @@ from PyQt5.QtCore import QUrl, QTimer
 from PyQt5.QtWebEngineWidgets import *
 import requests
 import pwnedpasswords
-
+from tqdm import tqdm
 
 # Local Imports
-import assets
+import assets #The resources for PyQt
 
 # ----------
 # Set up variables
@@ -41,21 +47,34 @@ import assets
 
 Version_MAJOR = 0
 Version_MINOR = 0
-Version_PATCH = 7
-SignedIn = False
-expanded = "0"
-developmental = False
+Version_PATCH = 10
+developmental = True #True = for .py & False = for .exe / mac executable
+debug = False
 
-downloadJadeAssistantVar = False
-updateJadeAssistantVar = False
+Version_TOTAL = f"{Version_MAJOR}.{Version_MINOR}.{Version_PATCH}"
+SignedIn = False
+LauncherIdVar = "Loading..."
+expanded = "0"
+
 guiLoopList = []
 killThreads = False
+
+selectedApp = False
+
+downloadAppVar = False
+updateAppVar = False
+jadeAssistantVersion = "Loading..."
+
+progress_bar = ""
+
+TruePath = ""
 
 
 # ----------
 # Set up the resource manager
 # ----------
 
+# Thanks to ArmindoFlores's answer on Stack Overflow https://stackoverflow.com/questions/51264169/pyinstaller-add-folder-with-images-in-exe-file
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -65,10 +84,33 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 # ----------
+# Get current location of script
+# ----------
+
+# Thanks to Soviut's Answer here: https://stackoverflow.com/questions/404744/determining-application-path-in-a-python-exe-generated-by-pyinstaller
+if developmental == False:
+    if getattr(sys, 'frozen', False):
+        application_path = os.path.dirname(sys.executable)
+
+    elif __file__:
+        application_path = os.path.dirname(__file__)
+
+    TruePath = os.path.join(application_path)
+    if platform.system() == "Windows":
+        TruePath = TruePath + "\\"
+
+    elif platform.system() == "Darwin":
+        TruePath = TruePath + "/"
+
+elif developmental == True:
+    TruePath = ""
+
+
+# ----------
 # Classes
 # ----------
 class Account:
-    '''A class to contain the user's account data.'''
+    '''A class to contain the user's account data, and also handles sign in, create acccount, change password, and more.'''
 
     
     def __init__(self, plus, suspended, username):
@@ -78,69 +120,71 @@ class Account:
 
     def writeAccountFile(self, usernameIN, passwordIN):
         '''Code for writing account file so we can remember you'''
+        global TruePath
 
-        print("Writing account file...")
-        accountFile = open("account.txt", "w")
+        UTILITYFuncs.logAndPrint("INFO", "Classes/Account/writeAccountFile: Writing account file...")
+        accountFile = open(f"{TruePath}account.txt", "w")
         accountFile.write(usernameIN + "\n" + passwordIN)
         accountFile.close()
-        print("Done writing account file.")
+        UTILITYFuncs.logAndPrint("INFO", "Class/Account/writeAccountFile: Done writing account file.")
 
     def Authenticate(self):
         '''Code for authentication at startup'''
 
         global SignedIn
-        print("MAINFuncs/readAccountFile: Reading account file...")
+        global TruePath
+        UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: Reading account file...")
         try:
             try:
                 accountFile = open("account.txt", "r")
             
             except FileNotFoundError:
-                accountFile = open("account.txt", "w")
+                UTILITYFuncs.logAndPrint("WARN", "Classes/Account/Authenticate: Account file not found! Will create one.")
+                accountFile = open(f"{TruePath}account.txt", "w")
                 accountFile.close()
-                accountFile = open("account.txt", "r")
+                accountFile = open(f"{TruePath}account.txt", "r")
 
             accountFileLines = accountFile.readlines()
             accountFile.close()
             if len(accountFileLines) == 0:
-                print("MAINFuncs/readAccountFile: Account file is empty!")
+                UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: Account file is empty! Not signed in.")
                 SignedIn = False
 
             elif len(accountFileLines) == 2:
-                print("MAINFuncs/readAccountFile: Account file has data! Will try to sign in.")
+                UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: Account file has data! Will try to sign in.")
 
             else:
-                print("MAINFuncs/readAccountFile: There's a problem with the account file.")
+                UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: There's a problem with the account file.")
 
         except Exception as e:
-            print(f"MAINFuncs/readAccountFile: There was a problem signing you in. {e}")
+            UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/Authenticate: There was a problem signing you in. {e}")
             UTILITYFuncs.error(f"There was a problem signing you in. {e}")
 
         try:
             USERNAME = accountFileLines[0]
             PASSWORD = accountFileLines[1]
-            print(f"Authenticating with username: {USERNAME} and password: {PASSWORD}")
+            UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/Authenticate: Authenticating with username: {USERNAME} and password: {PASSWORD}")
             try:
-                authenticateRequest = requests.get(f"https://nfoert.pythonanywhere.com/jade/get?user={USERNAME},password={PASSWORD}&")
+                authenticateRequest = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/get?user={USERNAME},password={PASSWORD}&")
                 authenticateRequest.raise_for_status()
             
-            except:
-                print("PROBLEM")
+            except Exception as e:
+                UTILITYFuncs.logAndPrint("WARN", "Classes/Account/Authenticate: There was a problem getting authentication requests.")
 
             if "user=" in authenticateRequest.text:
 
                 try:
                     art = authenticateRequest.text
-                    print(art)
                     art_email = UTILITYFuncs.substring(art, ",email=", ",name")
                     art_name = UTILITYFuncs.substring(art, ",name=", ",plus")
                     art_plus = UTILITYFuncs.substring(art, "plus=", ",suspended")
                     art_suspended = UTILITYFuncs.substring(art, "suspended=", "&")
 
                     if art_suspended == "no":
-                        print("Your account isn't suspended!")
+                        UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: Your account isn't suspended!")
 
                     else:
-                        print(f"Your account is suspended for {art_suspended}")
+                        UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/Authenticate: Your account is suspended for {art_suspended}")
                         dialog_accountSuspended.MAINLABEL.setText(art_suspended)
                         dialog_accountSuspended.MAINLABEL.setFont(QFont("Calibri", 10))
                         
@@ -148,7 +192,7 @@ class Account:
 
 
                     SignedIn = True
-                    print(f"ALL SIGNED IN: email={art_email},name={art_name},jadeAssistant={art_plus}")
+                    UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/Authenticate: SIGNED IN: email={art_email},name={art_name},jadeAssistant={art_plus}")
                     window_accountDetails.usernameBox_username.setText(USERNAME)
                     window_accountDetails.usernameBox_username.setFont(QFont("Calibri", 12))
 
@@ -175,39 +219,36 @@ class Account:
                     return True
 
                 except Exception as e:
-                    print(f"There was a problem doing a bunch of essential stuff when Authenticating. {e}")
-                    UTILITYFuncs.log("FATAL", f"There was a problem doing a bunch of essential stuff when Authenticating. {e}")
+                    UTILITYFuncs.logAndPrint("FATAL", f"Classes/Account/Authenticate: There was a problem doing a bunch of essential stuff when Authenticating. {e}")
                     UTILITYFuncs.error(f"There was a problem doing a bunch of essential stuff when Authenticating. {e}")
 
                 
 
             elif "not" in authenticateRequest.text:
-                print("Failed to sign in. Incorrect credentials.")
+                UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: Failed to sign in. Incorrect credentials.")
                 dialog_signInFailure.show()
                 SignedIn = False
                 return False
 
-        except:
-            print("Account file has no content! Cancel everything!")
+        except Exception as e:
+            UTILITYFuncs.logAndPrint("WARN", f"Classes/Account/Authenticate: There was a problem signing you in. (Account file may have no content.) '{e}'")
             SignedIn = False
 
         
-
-   
-
     def signIn(self):
-        '''Code for signing in'''
-
+        '''Code for signing in via the sign in window.'''
+        
         global SignedIn
+        
         usernameInput = window_signIn.usernameBox_edit.text()
         passwordInput = window_signIn.passwordBox_edit.text()
         
         try:
-            signInRequest = requests.get(f"https://nfoert.pythonanywhere.com/jade/get?user={usernameInput},password={passwordInput}&")
+            signInRequest = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/get?user={usernameInput},password={passwordInput}&")
             signInRequest.raise_for_status()
             
             if "user=" in signInRequest.text:
-                print("All signed in!")
+                UTILITYFuncs.logAndPrint("INFO", "Classes/Account/signIn: Signed In!")
                 SignedIn = True
                 self.writeAccountFile(usernameInput, passwordInput)
             
@@ -231,11 +272,18 @@ class Account:
                 window_main.leftBox_accountLabel.setAlignment(QtCore.Qt.AlignCenter)
                 window_main.leftBox_accountLabel.setStyleSheet("color: green")
 
+                self.password = passwordInput
+                self.username = usernameInput
+                self.email = sir_email
+                self.name = sir_name
+
                 if sir_suspended == "no":
+                    UTILITYFuncs.logAndPrint("INFO", "Classes/Account/signIn: You're not suspended!")
                     window_signIn.hide()
                     window_accountDetails.show()
 
                 else:
+                    UTILITYFuncs.logAndPrint("INFO", "Classes/Account/signIn: You're suspended!")
                     window_signIn.hide()
                     window_main.hide()
                     dialog_accountSuspended.MAINLABEL.setText(sir_suspended)
@@ -243,16 +291,14 @@ class Account:
                     dialog_accountSuspended.show()
 
             else:
-                print(f"There was a problem signing you in: incorrect credentials. |{usernameInput}|, |{passwordInput}|, |{signInRequest.text}|")
+                UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/signIn: There was a problem signing you in: incorrect credentials. |{usernameInput}|, |{passwordInput}|, |{signInRequest.text}|")
                 SignedIn = False
                 dialog_signInFailure.show()
         
         except Exception as e:
-            print(f"There was a problem signing you in. {e}")
-            UTILITYFuncs.log("WARN", "There was a problem signing you in. {e}")
+            UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/signIn: There was a problem signing you in. {e}")
             
-
-        
+    
     def signOut(self):
         '''Code for signing out'''
 
@@ -270,6 +316,7 @@ class Account:
 
         window_accountDetails.hide()
         window_signIn.show()
+        UTILITYFuncs.logAndPrint("INFO", "Classes/Account/signOut: Signed out.")
 
     def createAccount(self):
         '''Code for creating an account'''
@@ -281,6 +328,8 @@ class Account:
 
         gc = UTILITYFuncs.getConnection("Account/createAccount")
         if gc == True:
+            window_createAccount.mainBox_button.setEnabled(False)
+            window_createAccount.mainBox_button.setText("Checking password...")
             if len(passwordInput) >= 8:
                 
                 try:
@@ -292,16 +341,16 @@ class Account:
                 if passwordCheck == 0:
                     
                     try:
-                        createAccountRequest = requests.get(f"https://nfoert.pythonanywhere.com/jade/create?user={usernameInput},password={passwordInput},email={emailInput},name={nameInput}&")
+                        window_createAccount.mainBox_button.setText("Creating Account...")
+                        createAccountRequest = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/create?user={usernameInput},password={passwordInput},email={emailInput},name={nameInput}&")
                         createAccountRequest.raise_for_status()
 
-                        if createAccountRequest.text == "Account sucsessfully created.":
-                            print("Account sucsessfully created.")
+                        if createAccountRequest.text == "Account successfully created.":
+                            UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: Account sucsessfully created.")
+                            window_createAccount.mainBox_button.setEnabled(True)
+                            window_createAccount.mainBox_button.setText("Create Account")
 
-                            window_createAccount.MESSAGE.setText("Account successfully created. Now authenticating.")
-                            window_createAccount.MESSAGE.setFont(QFont("Calibri", 8))
-                            window_createAccount.MESSAGE.setStyleSheet("color: green")
-                            window_createAccount.MESSAGE.setAlignment(QtCore.Qt.AlignCenter)
+                            UTILITYFuncs.notification("Account successfully created.", "Your Account has been created.")
 
                             self.writeAccountFile(usernameInput, passwordInput)
                             self.Authenticate()
@@ -310,62 +359,131 @@ class Account:
                             window_accountDetails.show()
 
                         elif createAccountRequest.text == "That account already exists.":
-                            print("That account already exists!")
-                            window_createAccount.MESSAGE.setText("That account already exists!")
-                            window_createAccount.MESSAGE.setFont(QFont("Calibri", 8))
-                            window_createAccount.MESSAGE.setStyleSheet("color: red")
-                            window_createAccount.MESSAGE.setAlignment(QtCore.Qt.AlignCenter)
+                            UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: That account already exists!")
+                            UTILITYFuncs.notification("That account already exists!", "Maybe you already created an Account, but you forgot?")
+                            window_createAccount.mainBox_button.setEnabled(True)
+                            window_createAccount.mainBox_button.setText("Create Account")
 
                         else:
-                            print("There was a problem.")
-                            window_createAccount.MESSAGE.setText("There was a problem.")
-                            window_createAccount.MESSAGE.setFont(QFont("Calibri", 8))
-                            window_createAccount.MESSAGE.setStyleSheet("color: red")
-                            window_createAccount.MESSAGE.setAlignment(QtCore.Qt.AlignCenter)
+                            UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: There was a problem.")
+                            UTILITYFuncs.notification("There was a problem creating an Account.", "We couldn't create your account.")
+                            window_createAccount.mainBox_button.setEnabled(True)
+                            window_createAccount.mainBox_button.setText("Create Account")
 
                     except Exception as e:
-                        print(f"There was a problem creating an account. {e} @ {e.__traceback__.tb_lineno}")
-                        UTILITYFuncs.log("WARN", f"There was a problem creating an account. {e}")
-                        window_createAccount.MESSAGE.setText("There was a problem creating an account.t")
-                        window_createAccount.MESSAGE.setFont(QFont("Calibri", 8))
-                        window_createAccount.MESSAGE.setStyleSheet("color: red")
-                        window_createAccount.MESSAGE.setAlignment(QtCore.Qt.AlignCenter)
-
-            
+                        UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/createAccount: There was a problem creating an account. {e}")
+                        UTILITYFuncs.notification("There was a problem creating an Account.", "We couldn't create your account.")
+                        window_createAccount.mainBox_button.setEnabled(True)
+                        window_createAccount.mainBox_button.setText("Create Account")
 
                 elif passwordCheck >= 1:
-                    print("Password is not safe!")
-                    window_createAccount.MESSAGE.setText(f"Password has been leaked {passwordCheck} times! Please select a new password.")
-                    window_createAccount.MESSAGE.setFont(QFont("Calibri", 8))
-                    window_createAccount.MESSAGE.setStyleSheet("color: red")
-                    window_createAccount.MESSAGE.setAlignment(QtCore.Qt.AlignCenter)
+                    UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/createAccount: Password is not safe! Has been leaked {passwordCheck} times.")
+                    UTILITYFuncs.notification("That password is not safe!", f"That password has been leaked {passwordCheck} times.")
+                    window_createAccount.mainBox_button.setEnabled(True)
+                    window_createAccount.mainBox_button.setText("Create Account")
 
                 else:
-                    print("There was a problem checking password safety.")
-                    window_createAccount.MESSAGE.setText(f"There was a problem checking password safety.")
-                    window_createAccount.MESSAGE.setFont(QFont("Calibri", 8))
-                    window_createAccount.MESSAGE.setStyleSheet("color: red")
-                    window_createAccount.MESSAGE.setAlignment(QtCore.Qt.AlignCenter)
+                    UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: There was a problem checking password safety.")
+                    UTILITYFuncs.notification("There was a problem checking password safety.", "We were not able to confirm that your password is safe.")
+                    window_createAccount.mainBox_button.setEnabled(True)
+                    window_createAccount.mainBox_button.setText("Create Account")
             else:
-                print("Please select a password with more than 8 characters.")
-                window_createAccount.MESSAGE.setText("Please select a password with more than 8 characters.")
-                window_createAccount.MESSAGE.setFont(QFont("Calibri", 8))
-                window_createAccount.MESSAGE.setStyleSheet("color: red")
-                window_createAccount.MESSAGE.setAlignment(QtCore.Qt.AlignCenter)
+                UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: Please select a password with more than 8 characters.")
+                UTILITYFuncs.notification("Password is too short!", "Please make sure your password has eight or more characters.")
+                window_createAccount.mainBox_button.setEnabled(True)
+                window_createAccount.mainBox_button.setText("Create Account")
 
         elif gc == False:
-            window_createAccount.MESSAGE.setText(f"You're not connected!")
-            window_createAccount.MESSAGE.setFont(QFont("Calibri", 8))
-            window_createAccount.MESSAGE.setStyleSheet("color: red")
-            window_createAccount.MESSAGE.setAlignment(QtCore.Qt.AlignCenter)
+            UTILITYFuncs.notification("There was a problem creating an Account.", "You're not connected!")
 
         else:
-            window_createAccount.MESSAGE.setText(f"There was a problem getting connection.")
-            window_createAccount.MESSAGE.setFont(QFont("Calibri", 8))
-            window_createAccount.MESSAGE.setStyleSheet("color: red")
-            window_createAccount.MESSAGE.setAlignment(QtCore.Qt.AlignCenter)
+            UTILITYFuncs.notification("There was a problem creating an Account.", "There was a problem getting connection status.")
+
+    def changePassword(self):
+        verificationCode = window_changePassword.verificationCode_edit.text()
+        oldPassword = window_changePassword.oldPassword_edit.text()
+        newPassword = window_changePassword.passwordBox_edit.text()
+
+        if len(newPassword) >= 8:
+            window_changePassword.button.setEnabled(False)
+            window_changePassword.button.setText("Checking password...")
+            try:
+                passwordCheck = pwnedpasswords.check(newPassword)
+
+            except:
+                    passwordCheck = 0
+
+            if passwordCheck == 0:
+
+                try:
+                    window_changePassword.button.setEnabled(False)
+                    window_changePassword.button.setText("Changing password...")
+                    changePasswordRequest = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/changePassword?username={self.username},password={oldPassword},code={verificationCode},new={newPassword}&")
+                    changePasswordRequest.raise_for_status()
+
+                    if changePasswordRequest.text == "True":
+                        window_changePassword.hide()
+                        window_accountDetails.hide()
+
+                        self.password = newPassword
+
+                        window_changePassword.verificationCode_edit.clear()
+                        window_changePassword.oldPassword_edit.clear()
+                        window_changePassword.passwordBox_edit.clear()
+
+                        UTILITYFuncs.logAndPrint("INFO", "Account/changePassword: You changed your password.")
+                        UTILITYFuncs.notification("Password changed", "Your password has been changed.")
+
+                        window_changePassword.button.setEnabled(True)
+                        window_changePassword.button.setText("Change Password")
+
+                        myAccount.writeAccountFile(self.username, newPassword)
+
+                    elif changePasswordRequest.text == "There was a problem getting Verification Code data.":
+                        window_changePassword.passwordBox_edit.clear()
+                        UTILITYFuncs.logAndPrint("WARN", f"Account/changePassword: Your verification code is not correct. '{changePasswordRequest.text}'")
+                        UTILITYFuncs.notification("Your verification code is not correct.", f"Please check your email account {self.email} to view your verification code.")
+                        window_changePassword.button.setEnabled(True)
+                        window_changePassword.button.setText("Change Password")
+
+                    elif changePasswordRequest.text == "There was a problem getting Account data.":
+                        UTILITYFuncs.logAndPrint("WARN", f"Account/changePassword: There was a problem getting Account data.. '{changePasswordRequest.text}'")
+                        UTILITYFuncs.notification("There was a problem getting Account data.", "It looks like your username is not correct for some reason.")
+                        window_changePassword.button.setEnabled(True)
+                        window_changePassword.button.setText("Change Password")
+
+                    elif changePasswordRequest.text == "That username and password don't match any Account in the database.":
+                        UTILITYFuncs.logAndPrint("WARN", f"Account/changePassword: Your old password is not correct. '{changePasswordRequest.text}'")
+                        UTILITYFuncs.notification("Your old password is not correct.", f"Please confirm that your old password is correct.")
+                        window_changePassword.button.setEnabled(True)
+                        window_changePassword.button.setText("Change Password")
+
+                    else:
+                        window_changePassword.passwordBox_edit.clear()
+                        UTILITYFuncs.logAndPrint("WARN", f"Account/changePassword: There was a problem changing your password. '{changePasswordRequest.text}'")
+                        UTILITYFuncs.notification("There was a problem changing your password.", changePasswordRequest.text)
+                        window_changePassword.button.setEnabled(True)
+                        window_changePassword.button.setText("Change Password")
+
+                        
+                except Exception as e:
+                    UTILITYFuncs.logAndPrint("FATAL", f"Account/changePassword: An exception occured when changing your password. '{e}'")
+                    UTILITYFuncs.error(f"An exception occured when changing your password. '{e}'")
+                    window_changePassword.button.setEnabled(True)
+                    window_changePassword.button.setText("Change Password")
+
+            else:
+                UTILITYFuncs.notification("That password is not safe!", f"Your new password has been leaked {passwordCheck} times.")
+                window_changePassword.passwordBox_edit.clear()
+                window_changePassword.button.setEnabled(True)
+                window_changePassword.button.setText("Change Password")
+
+        else:
+            UTILITYFuncs.notification("That password is not long enough!", "Please make your new password eight or more characters.")
+            window_changePassword.passwordBox_edit.clear()
         
 class News:
+    '''A class to control news expansion and opening url.'''
     def __init__(self, header, date, text, url, number):
         self.header = header
         self.date = date
@@ -374,7 +492,8 @@ class News:
         self.number = number
 
     def expand(self):
-        print(f"Expanding news {self.number}")
+        '''Expand news'''
+        UTILITYFuncs.logAndPrint("INFO", f"Classes/News/expand: Expanding news {self.number}")
         window_expandedNews.header.setText(self.header)
         window_expandedNews.header.setFont(QFont("Calibri", 16))
         window_expandedNews.header.setAlignment(QtCore.Qt.AlignCenter)
@@ -408,29 +527,41 @@ class News:
         print("Done expanding.")
 
     def openUrl(self):
-        print("Attempting to open url:")
-        WEBVIEW.openWebView(self.url)
+        UTILITYFuncs.logAndPrint("INFO", "Classes/News/openUrl: Attempting to open url.")
+        if platform.system() == "Windows":
+            WEBVIEW.openWebView(self.url)
+
+        elif platform.system() == "Darwin":
+            webbrowser.open(self.url)
+
+        else:
+            UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
+
 
 
 class LauncherId:
+    '''A class for managing your Launcher Id'''
     def __init__(self, id, username):
         self.id = id
         self.username = username
 
     def getId(self):
-        print("Getting Launcher Id...")
+        '''Obtain the ID'''
+        global LauncherIdVar
+        global TruePath
+        UTILITYFuncs.logAndPrint("INFO", "Classes/LauncherId/getId: Getting Launcher Id...")
         gc = UTILITYFuncs.getConnection("LauncherId/getId")
         if gc == True:
             try:
-                IdFile = open("id.txt", "r")
+                IdFile = open(f"{TruePath}id.txt", "r")
                 readfile = IdFile.read()
                 IdFile.close()
                 self.id = readfile
                 return readfile
             
             except OSError:
-                print("This launcher does not have an id. Creating one...")
-                IdFile = open("id.txt", "w")
+                UTILITYFuncs.logAndPrint("INFO", "Classes/LauncherId/getId: This launcher does not have an id. Creating one...")
+                IdFile = open(f"{TruePath}id.txt", "w")
                 letters = string.ascii_lowercase
                 randomId = ""
                 randomIdFound = False
@@ -440,33 +571,34 @@ class LauncherId:
                         choose = random.choice(letters)
                         randomId = randomId + choose
 
-                    print(f"Random string is {randomId} Checking...")
+                    UTILITYFuncs.logAndPrint("INFO", f"Classes/LauncherId/getId: Random string is {randomId} Checking...")
 
                     try:
-                        randomIdCheck = requests.get(f"https://nfoert.pythonanywhere.com/jade/checkForExistingLauncherId?{randomId}&")
+                        randomIdCheck = requests.get(f"https://nfoert.pythonanywhere.com/jadeLauncher/checkForExistingLauncherId?{randomId}&")
 
                     except Exception as e:
-                        print("There was a problem checking the id.")
-                        UTILITYFuncs.error(f"When checking if the newly randomized Id for this launcher is valid, there was a problem. {e}")
+                        UTILITYFuncs.logAndPrint("WARN", f"Classes/LauncherId/getId: There was a problem checking the id. '{e}'")
 
                     if randomIdCheck.text == "SAFE TO USE":
                         IdFile.write(randomId)
-                        print("Id checked and ready to go.")
+                        UTILITYFuncs.logAndPrint("INFO", "Classes/LauncherId/getId: Id is safe to use.")
                         self.id = randomId
                         randomIdFound = True
+                        LauncherIdVar = self.id
                         return randomId
 
                     else:
-                        print("There was a problem checking the Id. Maybe it already existed?")
+                        UTILITYFuncs.logAndPrint("WARN", "Classes/LauncherId/getId: There was a problem checking the Id. Maybe it already existed?")
                         randomIdFound == False
-                        continue
                         return False
 
         elif gc == False:
-            print("You're not connected!")
+            return False
 
     def updateStatus(self):
-        print("Updating launcher status.")
+        '''Update this Launcher's status.'''
+        global LauncherIdVar
+        UTILITYFuncs.logAndPrint("INFO", "Classes/LauncherId/updateStatus: Updating launcher status.")
         gc = UTILITYFuncs.getConnection("LauncherId/updateStatus")
         if gc == True:
             version = f"{Version_MAJOR}.{Version_MINOR}.{Version_PATCH}"
@@ -477,29 +609,30 @@ class LauncherId:
                 USERNAMEINPUT = "notSignedIn"
 
             else:
-                print("There was a problem determining signed in status.")
+                UTILITYFuncs.logAndPrint("WARN", "Classes/LauncherId/updateStatus: There was a problem determining signed in status.")
                 USERNAMEINPUT = "notSignedIn"
             
             try:
-                updateStatusRequest = requests.get(f"https://nfoert.pythonanywhere.com/jade/updateLauncherId?id={self.id},username={USERNAMEINPUT},version={version}&")
+                updateStatusRequest = requests.get(f"https://nfoert.pythonanywhere.com/jadeLauncher/updateLauncherId?id={self.id},username={USERNAMEINPUT},version={version}&")
 
             except:
-                print("There was a problem getting the update status request.")
+                UTILITYFuncs.logAndPrint("INFO", "Classes/LauncherId/updateStatus: There was a problem getting the update status request.")
 
             if updateStatusRequest.text == "DONE":
-                print("Done.")
+                UTILITYFuncs.logAndPrint("INFO", "Classes/LauncherId/updateStatus: Done.")
+                dialog_about.id.setText(self.id)
+                dialog_about.id.setFont(QFont("Calibri", 10))
 
             else:
-                print("There was a problem updating Launcher Id.")
+                UTILITYFuncs.logAndPrint("INFO", f"Classes/LauncherId/updateStatus: There was a problem updating Launcher Id. {updateStatusRequest.text}, {self.id}")
                 
 
         elif gc == False:
-            print("You're not conected!")
+            return False
 
         else:
-            print("Couldn't determine if you're connected or not.")
+            UTILITYFuncs.logAndPrint("INFO", "Classes/LauncherId/updateStatus: Couldn't determine if you're connected or not.")
             UTILITYFuncs.error("Couldn't determine if you're connected or not when updating Launcher status.")
-            UTILITYFuncs.log("WARN", "Couldn't detmine if you're connected or not when updating Launcher status.")
 
 
 class WebView:
@@ -508,18 +641,27 @@ class WebView:
         pass
 
     def reload():
+        '''Reload the page'''
         window_webView.web.reload()
+        UTILITYFuncs.logAndPrint("INFO", "Classes/WebView/reload: Reloaded the page.")
 
     def back():
+        '''Go back a page'''
         window_webView.web.back()
+        UTILITYFuncs.logAndPrint("INFO", "Classes/WebView/back: Went back a page.")
 
     def forward():
+        '''Go forward a page'''
         window_webView.web.forward()
+        UTILITYFuncs.logAndPrint("INFO", "Classes/WebView/forward: Went forward a page.")
     
     def startLoading():
+        '''When the page begins to load'''
         window_webView.statusbar.showMessage("Loading page...")
+        UTILITYFuncs.logAndPrint("INFO", "Classes/WebView/startLoading: Began to load the page.")
 
     def doneLoading():
+        '''When the page is finished loading'''
         try:
             window_webView.statusbar.clearMessage()
             window_webView.title.setText(str(window_webView.web.title()))
@@ -532,7 +674,7 @@ class WebView:
             window_webView.title.setFont(QFont("Calibri", 8))
 
         except Exception as e:
-            UTILITYFuncs.error(f"There was a problem done loading! {e}")
+            UTILITYFuncs.logAndPrint("WARN", f"Classes/WebView/doneLoading: There was a problem setting labels when done loading! '{e}'")
     
     def openWebView(urlInput):
         gc = UTILITYFuncs.getConnection("WebView/openWebView")
@@ -542,14 +684,480 @@ class WebView:
                 window_webView.show()
 
             elif platform.system() == "Darwin":
-                print("You're on mac! Will just open in default webbrowser instead.")
+                UTILITYFuncs.logAndPrint("INFO", "Classes/WebView/openWebView: You're on mac! Will just open in default webbrowser instead.")
                 webbrowser.open(str(urlInput))
 
         elif gc == False:
-            print("You're offline!")
+            return False
 
         else:
-            print("There was a problem getting connection status.")
+            UTILITYFuncs.logAndPrint("WARN", "Classes/WebView/openWebView: There was a problem getting connection status.")
+
+class App:
+    def __init__(self, name, description, path, version):
+        self.name = name
+        self.description = description
+        self.path = path
+        self.version = version
+        self.downloadAppVar = False
+        self.updateAppVar = False
+        self.state = ""
+        self.newVersion = ""
+
+    def openAppMenu(self):
+        global selectedApp
+        UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: Opening app menu for {self.name}...")
+        selectedApp = self.name
+        window_appMenu.description.setText(self.description)
+        window_appMenu.description.setFont(QFont("Calibri", 8))
+        window_appMenu.description.setAlignment(QtCore.Qt.AlignCenter)
+
+        if self.state == "ready":
+            UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is ready.")
+            window_appMenu.launchButton.show()
+            window_appMenu.downloadButton.hide()
+            window_appMenu.updateButton.hide()
+            window_appMenu.removeButton.show()
+            window_appMenu.version.setText(f"Version {self.version}")
+            window_appMenu.version.setFont(QFont("Calibri", 8))
+            window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
+        
+
+        elif self.state == "download":
+            UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is download.")
+            window_appMenu.launchButton.hide()
+            window_appMenu.downloadButton.show()
+            window_appMenu.updateButton.hide()
+            window_appMenu.removeButton.hide()
+            window_appMenu.version.setText(f"Download version {self.newVersion}")
+            window_appMenu.version.setFont(QFont("Calibri", 8))
+            window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
+
+        elif self.state == "downloading":
+            UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is downloading.")
+            window_appMenu.launchButton.hide()
+            window_appMenu.downloadButton.show()
+            window_appMenu.updateButton.hide()
+            window_appMenu.removeButton.hide()
+            window_appMenu.version.setText(f"Downloading version {self.newVersion}...")
+            window_appMenu.version.setFont(QFont("Calibri", 8))
+            window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
+        
+
+        elif self.state == "update":
+            UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is updates.")
+            window_appMenu.launchButton.show()
+            window_appMenu.downloadButton.hide()
+            window_appMenu.updateButton.show()
+            window_appMenu.removeButton.show()
+            window_appMenu.version.setText(f"Update to version {self.newVersion}")
+            window_appMenu.version.setFont(QFont("Calibri", 8))
+            window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
+
+        elif self.state == "updating":
+            UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is updating.")
+            window_appMenu.launchButton.hide()
+            window_appMenu.downloadButton.hide()
+            window_appMenu.updateButton.show()
+            window_appMenu.removeButton.hide()
+            window_appMenu.version.setText(f"Updating to version {self.newVersion}...")
+            window_appMenu.version.setFont(QFont("Calibri", 8))
+            window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
+        
+            
+        elif self.state == "readyoffline":
+            UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is readyoffline.")
+            window_appMenu.launchButton.show()
+            window_appMenu.downloadButton.hide()
+            window_appMenu.updateButton.hide()
+            window_appMenu.removeButton.show()
+            window_appMenu.version.setText("You're offline!")
+            window_appMenu.version.setFont(QFont("Calibri", 8))
+            window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
+        
+
+        else:
+            UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is not recognized. '{self.state}'")
+            return False
+
+        UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: Menu for {self.name} has opened.")
+        window_appMenu.show()
+
+    def launchApp(self):
+        UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: Launching {self.name}...")
+        global killThreads
+        try:
+            if platform.system() == "Windows":
+                subprocess.Popen(f"{self.path}.exe")
+                killThreads = True
+                UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched.")
+                sys.exit()
+                
+            elif platform.system() == "Darwin":
+                subprocess.Popen(f"./{self.path}")
+                killThreads = True
+                UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched.")
+                sys.exit()
+                
+            else:
+                UTILITYFuncs.logAndPrint("FATAL", "UIFuncs/launchJadeAssistant: Your OS isn't supported! Please use Mac or Windows.")
+                UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac or Windows.")
+
+        except Exception as e:
+            UTILITYFuncs.logAndPrint("INFO", f"UIFuncs/launchJadeAssistant: There was a problem launching Jade Assistant! {e}")
+            UTILITYFuncs.error(f"There was a problem launching Jade Assistant! {e}")
+
+    def downloadApp(self):
+        UTILITYFuncs.logAndPrint("INFO", "App/downloadApp: Thread started.")
+        global guiLoopList
+        global killThreads
+        global progress_bar
+        while killThreads == False:
+            if self.downloadAppVar == True:
+                UTILITYFuncs.logAndPrint("INFO", "App/downloadApp: Downloading Jade Assistant...")
+                guiLoopList.append('window_appMenu.launchButton.hide()')
+                guiLoopList.append('window_appMenu.updateButton.hide()')
+                guiLoopList.append('window_appMenu.downloadButton.show()')
+                guiLoopList.append('window_appMenu.removeButton.hide()')
+                guiLoopList.append('window_appMenu.downloadButton.setEnabled(False)')
+                guiLoopList.append('window_appMenu.downloadButton.setText("Downloading...")')
+                guiLoopList.append('window_appMenu.progressBar.show()')
+                
+                if platform.system() == "Windows":
+                    end = ".exe"
+
+                elif platform.system() == "Darwin":
+                    end = ""
+
+                else:
+                    UTILITYFuncs.error("You're OS isn't supported! Please use Mac or Windows.")
+
+                try:
+                    UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Downloading {self.name}...")
+                    self.state = "downloading"
+                    guiLoopList.append('window_appMenu.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)')
+                    guiLoopList.append('window_main.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)')
+                    guiLoopList.append('window_main.show()')
+                    guiLoopList.append('JadeAssistant.openAppMenu()')
+                    DownloadAppPath = self.path.replace(" ", "%20")
+                    AppDownload = requests.get(f"https://github.com/nfoert/jadeassistant/raw/main/{DownloadAppPath}{end}", stream=True)
+                    total_size_in_bytes= int(AppDownload.headers.get('content-length', 0))
+                    block_size = 1024
+                    count = 0
+                    writeCount = 0
+                    progress_bar = tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True)
+                    
+                    with open(f'{self.path}{end}', 'wb') as file:
+                        for data in AppDownload.iter_content(block_size):
+                            progress_bar.update(len(data))
+                            prob = progress_bar.n / total_size_in_bytes
+                            
+                            count = count + 1
+                            if count == 40:
+                                writeCount = writeCount + 1
+                                count = 0
+                                if writeCount == 10:
+                                    number = f"{prob:.2}"
+                                    number = float(number)
+                                    number = number * 100
+                                    number = int(number)
+                                    guiLoopList.append(f'window_appMenu.progressBar.setValue({number})')
+                                    writeCount = 0
+
+                                else:
+                                    continue
+
+                            else:
+                                continue
+
+                            
+                            file.write(data)
+                    
+                    progress_bar.close()
+                    file.close()
+                    print(AppDownload.url)
+
+
+                    self.downloadAppVar = False
+                    guiLoopList.append('window_appMenu.launchButton.show()')
+                    guiLoopList.append('window_appMenu.updateButton.hide()')
+                    guiLoopList.append('window_appMenu.downloadButton.hide()')
+                    guiLoopList.append('window_appMenu.removeButton.show()')
+                    guiLoopList.append('window_appMenu.progressBar.hide()')
+                    self.state = "ready"
+                    guiLoopList.append('window_appMenu.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, True)')
+                    guiLoopList.append('window_main.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, True)')
+                    guiLoopList.append('window_main.show()')
+                    guiLoopList.append('JadeAssistant.openAppMenu()')
+                    UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Done downloading {self.name}.")
+                    guiLoopList.append(f'UTILITYFuncs.notification("{self.name} was downloaded.", "{self.name} is done downloading.")')
+
+                except Exception as e:
+                    UTILITYFuncs.logAndPrint("WARN", f"App/downloadApp: There was a problem downloading {self.name}! {e}")
+                    self.downloadAppVar = False
+                    guiLoopList.append(f'UTILITYFuncs.notification("There was a problem!", "There was a problem downloading {self.name}!")')
+                    guiLoopList.append('window_appMenu.launchButton.show()')
+                    guiLoopList.append('window_appMenu.updateButton.hide()')
+                    guiLoopList.append('window_appMenu.downloadButton.show()')
+                    guiLoopList.append('window_appMenu.downloadButton.setEnabled(True)')
+                    guiLoopList.append('window_appMenu.downloadButton.setText("Download")')
+                    guiLoopList.append('window_appMenu.removeButton.show()')
+                    guiLoopList.append('window_appMenu.progressBar.hide()')
+
+                
+
+            elif window_main.isVisible() == False:
+                return False
+
+            else:
+                sleep(1)
+                continue
+
+    def updateApp(self):
+        UTILITYFuncs.logAndPrint("INFO", "App/updateApp: Thread started.")
+        global guiLoopList
+        global killThreads
+        global progress_bar
+        global selectedApp
+        global TruePath
+        while killThreads == False:
+            if self.updateAppVar == True:
+                UTILITYFuncs.logAndPrint("INFO", "App/updateApp: Updating Jade Assistant...")
+                guiLoopList.append('window_appMenu.launchButton.hide()')
+                guiLoopList.append('window_appMenu.updateButton.show()')
+                guiLoopList.append('window_appMenu.downloadButton.hide()')
+                guiLoopList.append('window_appMenu.removeButton.hide()')
+                guiLoopList.append('window_appMenu.updateButton.setEnabled(False)')
+                guiLoopList.append('window_appMenu.updateButton.setText("Updating...")')
+                guiLoopList.append('window_appMenu.progressBar.show()')
+
+                if platform.system() == "Windows":
+                    end = ".exe"
+
+                elif platform.system() == "Darwin":
+                    end = ""
+
+                else:
+                    UTILITYFuncs.error("You're OS isn't supported! Please use Mac or Windows.")
+
+                try:
+                    UTILITYFuncs.logAndPrint("INFO", f"App/updateApp: Updating {self.name}...")
+                    self.state = "updating"
+                    guiLoopList.append('window_appMenu.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)')
+                    guiLoopList.append('window_main.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)')
+                    guiLoopList.append('window_main.show()')
+                    guiLoopList.append('JadeAssistant.openAppMenu()')
+                    
+                    os.remove(f"{self.path}{end}")
+                    print(self.path)
+                    self.path = self.path.replace(" ", "%20")
+                    AppDownload = requests.get(f"https://github.com/nfoert/jadeassistant/raw/main/{self.path}{end}", stream=True)
+                    total_size_in_bytes = int(AppDownload.headers.get('content-length', 0))
+                    block_size = 1024
+                    count = 0
+                    writeCount = 0
+                    progress_bar = tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True)
+                    self.path = self.path.replace("%20", " ")
+                    
+                    with open(f'{self.path}{end}', 'wb') as file:
+                        for data in AppDownload.iter_content(block_size):
+                            progress_bar.update(len(data))
+                            prob = progress_bar.n / total_size_in_bytes
+                            file.write(data)
+                            count = count + 1
+                            if count == 40:
+                                writeCount = writeCount + 1
+                                count = 0
+                                if writeCount == 10:
+                                    number = f"{prob:.2}"
+                                    number = float(number)
+                                    number = number * 100
+                                    number = int(number)
+                                    guiLoopList.append(f'window_appMenu.progressBar.setValue({number})')
+                                    writeCount = 0
+
+                                else:
+                                    continue
+
+                            else:
+                                continue
+                        
+                        AppDownload.close()
+                        progress_bar.close()
+                        file.close()
+
+                    if platform.system() == "Windows":
+                        print("hi")
+
+                    elif platform.system() == "Darwin":
+                        os.system(f"chmod 755 '{self.path}'")
+
+                    else:
+                        UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac!")
+
+
+                    self.updateAppVar = False
+                    self.state = "ready"
+                    guiLoopList.append('window_appMenu.launchButton.show()')
+                    guiLoopList.append('window_appMenu.updateButton.hide()')
+                    guiLoopList.append('window_appMenu.downloadButton.hide()')
+                    guiLoopList.append('window_appMenu.removeButton.show()')
+                    guiLoopList.append('window_appMenu.progressBar.hide()')
+                    guiLoopList.append('window_appMenu.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, True)')
+                    guiLoopList.append('window_main.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, True)')
+                    guiLoopList.append('window_main.show()')
+                    guiLoopList.append('JadeAssistant.openAppMenu()')
+                    UTILITYFuncs.logAndPrint("INFO", f"App/updateApp: Done updating {self.name}. Writing version file...")
+                    versionFileName = self.path
+                    versionFileName = versionFileName.replace(" ", "")
+                    appVersionFile = open(f"{TruePath}{versionFileName}Version.txt", "w")
+                    print(appVersionFile.name)
+                    print(versionFileName)
+                    file = open("file.txt", "w")
+                    self.newVersion = self.newVersion.replace(".", "\n")
+                    appVersionFile.write(self.newVersion)
+                    appVersionFile.close()
+                    
+                    guiLoopList.append(f'UTILITYFuncs.notification("{self.name} was updated.", "{self.name} is done updating.")')
+
+                    sleep(5)
+
+                except Exception as e:
+                    UTILITYFuncs.logAndPrint("WARN", f"App/updateApp: There was a problem updating {self.name}! {e}")
+                    self.updateAppVar = False
+                    guiLoopList.append(f'UTILITYFuncs.notification("There was a problem!", "There was a problem updating {self.name}!")')
+                    guiLoopList.append('window_appMenu.launchButton.show()')
+                    guiLoopList.append('window_appMenu.updateButton.show()')
+                    guiLoopList.append('window_appMenu.downloadButton.hide()')
+                    guiLoopList.append('window_appMenu.updateButton.setEnabled(True)')
+                    guiLoopList.append('window_appMenu.updateButton.setText("Update")')
+                    guiLoopList.append('window_appMenu.removeButton.show()')
+                    guiLoopList.append('window_appMenu.progressBar.hide()')
+
+                
+
+            elif window_main.isVisible() == False:
+                return False
+
+            else:
+                sleep(1)
+                continue
+
+    def removeApp(self):
+        try:
+            if platform.system() == "Windows":
+                os.system(f'taskkill /F /IM "{self.path}.exe"')
+                os.remove("Jade Assistant.exe")
+                guiLoopList.append('window_appMenu.launchButton.hide()')
+                guiLoopList.append('window_appMenu.updateButton.hide()')
+                guiLoopList.append('window_appMenu.downloadButton.show()')
+                guiLoopList.append('window_appMenu.removeButton.hide()')
+                UTILITYFuncs.notification("Jade Assistant was removed.", "You just deleted Jade Assistant.")
+
+            elif platform.system() == "Darwin":
+                os.system(f'killall "{self.path}"')
+                os.remove("Jade Assistant")
+                guiLoopList.append('window_appMenu.launchButton.hide()')
+                guiLoopList.append('window_appMenu.updateButton.hide()')
+                guiLoopList.append('window_appMenu.downloadButton.show()')
+                guiLoopList.append('window_appMenu.removeButton.hide()')
+                UTILITYFuncs.notification("Jade Assistant was removed.", "You just deleted Jade Assistant.")
+
+            else:
+                UTILITYFuncs.logAndPrint("INFO", "UIFuncs/removeJadeAssistant: Your OS isn't supported! Please use Mac or Windows.")
+                UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac or Windows.")
+
+        except Exception as e:
+            UTILITYFuncs.logAndPrint("INFO", f"UIFuncs/removeJadeAssistant: There was a problem removing Jade Assistant! {e}")
+            UTILITYFuncs.error(f"There was a problem removing Jade Assistant! {e}")
+
+    def checkForUpdates(self):
+        global selectedApp
+        global TruePath
+
+        UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Checking if Jade Assistant exists or needs an update.")
+        AppWindows = Path(f"{self.path}.exe").exists()
+        AppMac = Path(f"{self.path}").exists()
+
+        try:
+            AppVersionFromServer = requests.get("https://nfoert.pythonanywhere.com/jadeAssistant/jadeAssistantVersion")
+            AppVersionFromServer.raise_for_status()
+
+        except Exception as e:
+            UTILITYFuncs.logAndPrint("WARN", f"App/checkForUpdates: There was a problem checking {self.name} for updates! {e}")
+            self.state = "ready"
+            return False
+
+        fsMAJOR = UTILITYFuncs.substring(AppVersionFromServer.text, "major=", ",minor")
+        fsMINOR = UTILITYFuncs.substring(AppVersionFromServer.text, "minor=", ",patch")
+        fsPATCH = UTILITYFuncs.substring(AppVersionFromServer.text, "patch=", "&")
+        self.newVersion = f"{fsMAJOR}.{fsMINOR}.{fsPATCH}"
+        
+        if AppWindows == True or AppMac == True:
+            UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: {self.name} exists!")
+            # It exists! Now check for existance of version file
+            
+            UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: App is Jade Assistant!")
+            versionFile = self.path
+            versionFile = versionFile.replace(" ", "")
+            AppVersionFileExists = Path(f"{TruePath}{versionFile}Version.txt").exists()
+            
+            if AppVersionFileExists == True:
+                #It exists! Now check for updates
+                UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Checking for updates for Jade Assistant!")
+                versionFileName = self.path.replace(" ", "")
+                AppVersionFile = open(f"{TruePath}{versionFileName}Version.txt", "r")
+                AppVersionFileContents = AppVersionFile.readlines()
+                AppVersion_MAJOR = AppVersionFileContents[0]
+                AppVersion_MINOR = AppVersionFileContents[1]
+                AppVersion_PATCH =AppVersionFileContents[2]
+                AppVersion = f"{AppVersion_MAJOR}.{AppVersion_MINOR}.{AppVersion_PATCH}"
+                NewVersion = f"{fsMAJOR}.{fsMINOR}.{fsPATCH}"
+                AppVersion = AppVersion.replace("\n", "")
+                self.version = NewVersion
+
+                if AppVersion_MAJOR < fsMAJOR:
+                    # Updates required
+                    self.state = "update"
+                    UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates required. {AppVersion_MAJOR} < {fsMAJOR}")
+                    UTILITYFuncs.notification(f"{self.name} Update Avaliable.", f"Open {self.name}'s menu to update to version {NewVersion}.")
+
+                elif AppVersion_MINOR < fsMINOR:
+                    # Updates required
+                    self.state = "update"
+                    UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates required. {AppVersion_MINOR} < {fsMINOR}")
+                    UTILITYFuncs.notification(f"{self.name} Update Avaliable.", f"Open {self.name}'s menu to update to version {NewVersion}.")
+
+                elif AppVersion_PATCH < fsPATCH:
+                    # Updates required
+                    self.state = "update"
+                    UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates required. {AppVersion_PATCH} < {fsPATCH}")
+                    UTILITYFuncs.notification(f"{self.name} Update Avaliable.", f"Open {self.name}'s menu to update to version {NewVersion}.")
+
+                else:
+                    # Updates not required
+                    self.state = "ready"
+                    UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Updates not required.")
+
+            else:
+                self.state = "ready"
+                UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Version file does not exist.")
+                window_appMenu.version.hide()
+                        
+
+        elif AppWindows == False or AppMac == False:
+            # It dosen't exist! Show button for downloading.
+            UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: {self.name} dosen't exist!")
+            self.state = "download"
+
+        else:
+            #Unable to tell if it exists or not
+            UTILITYFuncs.logAndPrint("WARN", f"App/checkForUpdates: Unable to tell if {self.name} exists or not.")
+            UTILITYFuncs.error(f"Unable to tell if {self.name} exists or not!")
+
+
+
+    
 
 # ----------
 # Functions
@@ -559,6 +1167,7 @@ Note: I understand this is maybe not the best way to group functions,
 but I feel this will help my code workflow. The old Jade Launcher
 had a mess of functions, so I hope this will help
 with organization.
+UPDATE 6/12/22 when working on BETA 0.0.9: I wrote that way back when I started this program, and this technique has helped me in many ways.
 '''
 class UTILITYFuncs:
     '''A Group of functions for various utility purposes.'''
@@ -567,19 +1176,21 @@ class UTILITYFuncs:
         pass
 
     def log(tag, text):
+        global TruePath
         now = datetime.datetime.now()
+        text = text.replace("\n", " ")
         try:
-            logFile = open("JadeLauncherLog.txt", "a")
+            logFile = open(f"{TruePath}JadeLauncherLog.txt", "a")
             logFile.write(f"\n[{now.month}/{now.day}/{now.year}] [{now.hour}:{now.minute}:{now.second}] |{tag}| >>> {text}")
         
         except Exception as e:
-            print(f"There was a problem logging messgages to the log file! {e}")
+            print(f"There was a problem logging messgages to the log file! '{e}'")
             sys.exit()
         
         logFile.close()
 
     def getConnection(fromWhat):
-        print(f"UTILITYFuncs/getConnection: Getting Connection Status from: {fromWhat}")
+        UTILITYFuncs.logAndPrint("INFO", f"UTILITYFuncs/getConnection: Getting Connection Status from: {fromWhat}")
         try:
             gcRequest = requests.get("https://google.com")
             
@@ -587,23 +1198,37 @@ class UTILITYFuncs:
                 gcRequest.raise_for_status()
 
             except:
-                print(f"UTILITYFuncs:/getConnection: You're not connected! From: {fromWhat}")
-                UTILITYFuncs.log("GetConnection", f"You're not connected! From: {fromWhat}")
+                UTILITYFuncs.logAndPrint("INFO", f"UTILITYFuncs/getConnection: You're not connected! From: {fromWhat}")
                 window_offline.show()
+                window_main.offlineLabel.show()
+                dialog_about.idLabel.hide()
+                dialog_about.id.hide()
+                window_main.leftBox_accountLabel.setText("You're offline")
+                window_main.leftBox_accountLabel.setFont(QFont("Calibri", 8))
+                window_main.leftBox_accountLabel.setAlignment(QtCore.Qt.AlignCenter)
+                window_main.leftBox_accountLabel.setStyleSheet("color: orange")
+                UTILITYFuncs.notification("You're offline!", "Please connect to internet and restart.")
                 return(False)
 
         except:
-            print(f"UTILITYFuncs:/getConnection: You're not connected! From: {fromWhat}")
-            UTILITYFuncs.log("GetConnection", f"You're not connected! From: {fromWhat}")
+            UTILITYFuncs.logAndPrint("INFO", f"UTILITYFuncs/getConnection: You're not connected! From: {fromWhat}")
             window_offline.show()
+            window_main.offlineLabel.show()
+            dialog_about.idLabel.hide()
+            dialog_about.id.hide()
+            window_main.leftBox_accountLabel.setText("You're offline")
+            window_main.leftBox_accountLabel.setFont(QFont("Calibri", 8))
+            window_main.leftBox_accountLabel.setAlignment(QtCore.Qt.AlignCenter)
+            window_main.leftBox_accountLabel.setStyleSheet("color: orange")
+            UTILITYFuncs.notification("You're offline!", "Please connect to internet and restart.")
             return(False)
 
         
-        print("UTILITYFuncs:/getConnection: You're connected!")
-        UTILITYFuncs.log("GetConnection", f"You're connected! From: {fromWhat}")
+        UTILITYFuncs.logAndPrint("INFO", f"UTILITYFuncs/getConnection: You're connected!")
         return(True)
 
     def substring(inputString, one, two):
+        global debug
         try:
             start = inputString.find(one) + len(one)
 
@@ -614,33 +1239,34 @@ class UTILITYFuncs:
                     result = inputString[start:end]
         
                     if len(inputString) >= 100:
-                        print("Input string output will be converted to a shortened version.")
                         inputString = inputString[:100] + "..."
 
                     else:
-                        print("Input string does not need to be shortened.")
-                
-                    UTILITYFuncs.log("INFO", f"Just substringed '{inputString}' with result '{inputString}'")
-                    return result
+                        UTILITYFuncs.logAndPrint("SUBSTRING", "Input string does not need to be shortened.")
+
+                    if debug == True:
+                        UTILITYFuncs.logAndPrint("SUBSTRING", f"UTILTYFuncs/substring: Just substringed '{inputString}' with result '{inputString}'")
+                        return result
+                    else:
+                        return result
 
                 except:
-                    print(f"UTILITYFuncs/substring: There was a problem finishing substringing with input '{inputString}'")
-                    UTILITYFuncs.log("WARN", f"There was a problem finishing substringing with input '{inputString}'")
+                    UTILITYFuncs.logAndPrint("SUBSTRING", f"UTILTYFuncs/substring: There was a problem finishing substringing with input '{inputString}'")
                     raise Exception("Could not finish substringing.")
 
             except:
-                print(f"UTILITYFuncs/substring: Unable to find the second string with input '{inputString}'")
-                UTILITYFuncs.log("WARN", f"Unable to find the second string with input '{inputString}'")
+                UTILITYFuncs.logAndPrint("SUBSTRING", f"UTILTYFuncs/substring: Unable to find the second string with input '{inputString}'")
                 raise Exception("Could not find the second string.")
         
         except:
-            print(f"UTILITYFuncs/substring: Unable to find the first string with input '{inputString}'")
-            UTILITYFuncs.log("WARN", f"Unable to find the first string with input '{inputString}'")
+            UTILITYFuncs.logAndPrint("SUBSTRING", f"UTILTYFuncs/substring: Unable to find the first string with input '{inputString}'")
             raise Exception("Could not find the first string.")
 
     def error(Error):
+        global killThreads
+        killThreads = True
         window_main.hide()
-        window_jadeAssistantMenu.hide()
+        window_appMenu.hide()
         dialog_error.ERROR.setText(Error)
         dialog_error.ERROR.setFont(QFont("Calibri", 14))
         dialog_error.show()
@@ -649,12 +1275,42 @@ class UTILITYFuncs:
         print("-----")
         print(Error)
         print("-----")
-        UTILITYFuncs.log("FATAL", f"A fatal exception occured: {Error}")
+        UTILITYFuncs.logAndPrint("FATAL", f"UTILITYFuncs/error: A fatal exception occured: {Error}")
 
         app.exec()
         dialog_error.show()
 
+    def notification(header, text):
+        UTILITYFuncs.logAndPrint("INFO", f"UTILITYFuncs/notification: Showing notification with header '{header}' and text '{text}'")
+        if window_notification.isVisible() == True:
+            window_notification.hide()
+            sleep(0.5)
+            window_notification.show()
+            window_notification.move(10, 10)
 
+            window_notification.header.setText(header)
+            window_notification.header.setFont(QFont("Calibri Bold", 12))
+            window_notification.header.setAlignment(QtCore.Qt.AlignLeft)
+
+            window_notification.body.setText(text)
+            window_notification.body.setFont(QFont("Calibri", 9))
+            window_notification.body.setAlignment(QtCore.Qt.AlignLeft)
+
+        else:
+            window_notification.show()
+            window_notification.move(10, 10)
+
+            window_notification.header.setText(header)
+            window_notification.header.setFont(QFont("Calibri Bold", 12))
+            window_notification.header.setAlignment(QtCore.Qt.AlignLeft)
+
+            window_notification.body.setText(text)
+            window_notification.body.setFont(QFont("Calibri", 9))
+            window_notification.body.setAlignment(QtCore.Qt.AlignLeft)
+
+    def logAndPrint(tag, text):
+        UTILITYFuncs.log(tag, text)
+        print(f"|{tag}| {text}")
 
 
 class MAINFuncs:
@@ -666,7 +1322,7 @@ class MAINFuncs:
         pass
 
     def mainCode():
-        '''The most important code of the Jade Launcher. Will check for updates, sign you in, and fetch news.'''
+        '''The startup code for the Launcher. Will check for updates, sign in, fetch news, check for suspension, set the welcome message, update Id status and check Jade Assistant status.'''
         
         global Version_MAJOR
         global Version_MINOR
@@ -684,37 +1340,71 @@ class MAINFuncs:
         CONFIG_Authenticate = True
         CONFIG_FetchNews = True
 
+        global developmental
 
-        print("MAINFuncs/mainCode: Main code thread started!")
+        global jadeAssistantVersion
+        global JadeAssistant
+
+        global TruePath
+
+        # That's a lot of global variables :)
+
+        from timeit import default_timer as runDuration
+        startElapsedTime = runDuration()
+
+        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode: Main code thread started!")
+
+        def show_message(text):
+            if platform.system() == "Windows":
+                window_splash.showMessage(text, alignment=QtCore.Qt.AlignCenter | QtCore.Qt.AlignBottom, color=QtGui.QColor("white"))
+
+            elif platform.system() == "Darwin":
+                print("Not showing splash screen message since splash screen does not work on mac.")
+                return False
+
+            else:
+                print("Your OS isn't supported! Please use Windows or Mac.")
+                UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
+        
         # Thanks to Liam on StackOverflow
         # https://stackoverflow.com/questions/58661539/create-splash-screen-in-pyqt5
-        splash_pix = QtGui.QPixmap(str(resource_path("JadeLauncherSplash.png")))
+        if developmental == False:
+            splash_pix = QtGui.QPixmap(str(resource_path("JadeLauncherSplash.png")))
+
+        elif developmental == True:
+            splash_pix = QtGui.QPixmap(str(PurePath("assets/JadeLauncherSplash.png")))
+
         window_splash = QtWidgets.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
-        # add fade to splashscreen 
+
+        screenSize = screen.size()
+        moveHeight = screenSize.height() - 290
+        window_splash.move(10, moveHeight)
+
+        window_splash.setFont(QFont("Calibri", 14))
+        show_message("Loading...")
         opaqueness = 0.0
-        step = 0.01
+        step = 0.03
         window_splash.setWindowOpacity(opaqueness)
         window_splash.show()
         while opaqueness < 1:
             window_splash.setWindowOpacity(opaqueness)
-            sleep(step) # Gradually appears
+            sleep(step)
             opaqueness+=step
 
 
         # Check for updates
-        print("MAINFuncs/mainCode/checkForUpdates: Checking for updates...")
-        
+        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Checking for updates...")
+        show_message("Checking for updates...")
 
         if CONFIG_CheckForUpdates == True:
             gc = UTILITYFuncs.getConnection("mainCode/Check For Updates")
             if gc == True:
                 try:
-                    versionRequest = requests.get("https://nfoert.pythonanywhere.com/jade/jadeLauncherVersion")
+                    versionRequest = requests.get("https://nfoert.pythonanywhere.com/jadeLauncher/jadeLauncherVersion")
                     versionRequest.raise_for_status()
 
                 except Exception as e:
-                    print(f"MAINFuncs/mainCode/checkForUpdates: There was a problem checking for updates. {e}")
-                    UTILITYFuncs.log("WARN", f"There was a problem checking for updates. {e}")
+                    UTILITYFuncs.logAndPrint("WARN", f"MAINFuncs/mainCode/checkForUpdates: There was a problem checking for updates. {e}")
 
                 vrt = versionRequest.text
                 requestMajor = UTILITYFuncs.substring(vrt, "major=", ",minor")
@@ -722,37 +1412,37 @@ class MAINFuncs:
                 requestPatch = UTILITYFuncs.substring(vrt, "patch=", "&")
 
                 if versionRequest.ok == True:
-                    print("Version requests are ok!")
+                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Version requests are ok!")
 
                     requestMajor = int(requestMajor)
                     requestMinor = int(requestMinor)
                     requestPatch = int(requestPatch)
 
                     if Version_MAJOR < requestMajor:
-                        print("Updates are required.")
+                        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Updates are required.")
                         update = "yes"
 
                     elif Version_MINOR < requestMinor:
-                        print("Updates are required.")
+                        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Updates are required.")
                         update = "yes"
 
                     elif Version_PATCH < requestPatch:
-                        print("Updates are required.")
+                        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Updates are required.")
                         update = "yes"
 
                     else:
-                        print("Updates not required.")
+                        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Updates not required.")
                         update = "no"
 
                 else:
-                    print("Version requests are not ok!")
+                    UTILITYFuncs.logAndPrint("WARN", "MAINFuncs/mainCode/checkForUpdates: Version requests are not ok!")
                     update = "no"
                     window_splash.hide()
                     UTILITYFuncs.error("It looks like my web server is down. Wait a bit and see if it fixes, otherwise please send me an email and I'll take a look at it. You could also check PythonAnywhere's twitter page to see if it's down. (That's who hosts the web server for me.)")
                     return(False)
                 
                 if update == "yes":
-                    print("Now updating... First going to remove the updater - if it exists")
+                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Now updating... First going to remove the updater - if it exists")
                     try:
                         if platform.system() == "Windows":
                             os.remove("Jade Launcher Updater.exe")
@@ -765,61 +1455,55 @@ class MAINFuncs:
                             UTILITYFuncs.error("Hey there! Your OS isn't supported. Please install the Launcher for Windows or Mac from my website, 'https://nofoert.wixsite.com/jade/download'")
 
                     except OSError as e:
-                        print(f"The updater dosen't seem to exist. {e}")
+                        UTILITYFuncs.logAndPrint("INFO", f"MAINFuncs/mainCode/checkForUpdates: The updater dosen't seem to exist. {e}")
 
                     except Exception as e:
-                        print("There was a problem removing the Updater.")
-                        UTILITYFuncs.log("WARN", f"There was a problem removing the Updater: {e}")
+                        UTILITYFuncs.logAndPrint("WARN", "MAINFuncs/mainCode/checkForUpdates: There was a problem removing the Updater.")
                         
-                        
-
-                    print("Now going to download and run the installer.")
+                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Now going to download and run the installer.")
                     try:
                         if platform.system() == "Windows":
-                            print("Going to update for windows.")
+                            UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Going to update for windows.")
                             try:
-                                jadeLauncherUpdaterRequest = requests.get("https://raw.githubusercontent.com/nfoert/jadelauncher/main/Jade%20Launcher%20Updater.exe")
+                                jadeLauncherUpdaterRequest = requests.get("https://github.com/nfoert/jadelauncher/raw/main/Jade%20Launcher%20Updater.exe")
                                 jadeLauncherUpdaterRequest.raise_for_status()
-                                print("Saving...")
-                                jadeLauncherUpdater = open("jadeLauncherUpdater.exe", "wb")
+                                UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Saving...")
+                                jadeLauncherUpdater = open(f"{TruePath}Jade Launcher Updater.exe", "wb")
                                 for chunk in jadeLauncherUpdaterRequest.iter_content(100000):
                                     jadeLauncherUpdater.write(chunk)
 
                                 jadeLauncherUpdater.close()
 
-                                print("Done. Now opening.")
+                                UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Done. Now opening.")
                                 try:
-                                    subprocess.Popen("jadeLauncherUpdater.exe")
+                                    subprocess.Popen("Jade Launcher Updater.exe")
                                     sys.exit()
 
                                 except Exception as e:
-                                    print(f"There was a problem starting the updater. {e}")
-                                    UTILITYFuncs.log("WARN", f"There was a problem starting the updater: {e}")
+                                    UTILITYFuncs.logAndPrint("FATAL", f"MAINFuncs/mainCode/checkForUpdates: There was a problem starting the updater. {e}")
                                     UTILITYFuncs.error(f"There was a problem starting the updater. This may be nothing. Please restart. {e}")
 
 
                             except Exception as e:
-                                print(f"There was a problem installing the updater for windows. {e}")
-                                UTILITYFuncs.log("WARN", f"There was a problem installing the updater for windows. {e}")
+                                UTILITYFuncs.logAndPrint("WARN", f"MAINFuncs/mainCode/checkForUpdates: There was a problem installing the updater for windows. {e}")
 
                         elif platform.system() == "Darwin":
-                            print("Going to update for Mac.")
+                            UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Going to update for Mac.")
                             try:
-                                jadeLauncherUpdaterRequest = requests.get("https://raw.githubusercontent.com/nfoert/jadelauncher/main/jadeLauncherUpdater")
+                                jadeLauncherUpdaterRequest = requests.get("https://github.com/nfoert/jadelauncher/raw/main/Jade%20Launcher%20Updater")
                                 jadeLauncherUpdaterRequest.raise_for_status()
-                                print("Saving...")
-                                jadeLauncherUpdater = open("jadeLauncherUpdater", "wb")
+                                UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Saving...")
+                                jadeLauncherUpdater = open(f"{TruePath}Jade Launcher Updater", "wb")
                                 for chunk in jadeLauncherUpdaterRequest.iter_content(100000):
                                     jadeLauncherUpdater.write(chunk)
 
-                                print("Done. Now opening.")
+                                UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Done. Now opening.")
                                 try:
-                                    subprocess.Popen("jadeLauncherUpdater")
+                                    subprocess.Popen("Jade Launcher Updater")
                                     sys.exit()
 
                                 except Exception as e:
-                                    print("There was a problem starting the updater.")
-                                    UTILITYFuncs.log("WARN", f"There was a problem starting the updater: {e}")
+                                    UTILITYFuncs.logAndPrint("WARN", f"MAINFuncs/mainCode/checkForUpdates: There was a problem starting the updater. {e}")
                                     UTILITYFuncs.error(f"There was a problem starting the updater. This may be nothing. Please restart. {e}")
 
                             except Exception as e:
@@ -827,17 +1511,17 @@ class MAINFuncs:
                                 UTILITYFuncs.log("WARN", f"There was a problem installing the updater for windows. {e}")
 
                         else:
-                            print("Your OS is not supported.")
+                            UTILITYFuncs.logAndPrint("FATAL", "MAINFuncs/mainCode/checkForUpdates: Your OS is not supported.")
+                            UTILITYFuncs.error("Your OS isn't supported. Please use Windows or Mac.")
 
                     except Exception as e:
-                        print(f"There was a problem when updating. {e}")
-                        UTILITYFuncs.log("WARN", f"There was a problem when updating: {e}")
+                        UTILITYFuncs.logAndPrint("WARN", f"MAINFuncs/mainCode/checkForUpdates: There was a problem when updating. {e}")
                         UTILITYFuncs.error(f"There was a problem when updating. {e}")
 
 
                 
                 elif update == "no":
-                    print("Not updating. Going to try to remove the updater - just in case it exists.")
+                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Not updating. Going to try to remove the updater - just in case it exists.")
                     try:
                         if platform.system() == "Windows":
                             os.remove("jadeLauncherUpdater.exe")
@@ -846,77 +1530,77 @@ class MAINFuncs:
                             os.remove("jadeLauncherUpdater")
 
                         else:
-                            print("Your OS isn't supported.")
+                            UTILITYFuncs.logAndPrint("FATAL", "MAINFuncs/mainCode/checkForUpdates: Your OS isn't supported.")
+                            UTILITYFuncs.error("Your OS isn't supported. Please use Windows or Mac.")
 
                     except OSError as e:
-                        print(f"The updater dosen't seem to exist. {e}")
+                        UTILITYFuncs.logAndPrint("FATAL", f"MAINFuncs/mainCode/checkForUpdates: The updater dosen't seem to exist. {e}")
 
                     except Exception as e:
-                        print("There was a problem removing the Updater.")
-                        UTILITYFuncs.log("WARN", f"There was a problem removing the Updater: {e}")
+                        UTILITYFuncs.logAndPrint("FATAL", f"MAINFuncs/mainCode/checkForUpdates: There was a problem removing the Updater. {e}")
                         UTILITYFuncs.error("There was a problem removing the updater. This will cause problems when updating in the future. Please restart.")
 
 
                 else:
-                    print("Not updating. Couldn't figure out if we're supposed to or not, so let's say no.")
-                    UTILITYFuncs.log("WARN", "Couldn't tell if we should have updated or not.")
+                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Not updating. Couldn't figure out if we're supposed to or not, so let's say no.")
 
 
             elif gc == False:
-                print("MAINFuncs/mainCode/checkForUpdates: You're not connected! Skipping checking for updates.")
+                UTILITYFuncs.logAndPrint("NOT CONNECTED", "MAINFuncs/mainCode/checkForUpdates: You're not connected! Skipping checking for updates.")
                 window_main.show()
                 window_main.newsBox1.hide()
                 window_main.newsBox2.hide()
                 window_main.newsBox3.hide()
 
         elif CONFIG_CheckForUpdates == False:
-            print("MAINFuncs/mainCode/checkForUpdates: Skipping checking for updates, as it's turned off.")
+            UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Skipping checking for updates, as it's turned off.")
 
         else:
-            print(f"MAINFuncs/mainCode/checkForUpdates: Skipping checking for updates, as we can't tell if it's turned off or on. '{CONFIG_CheckForUpdates}'")
+            UTILITYFuncs.logAndPrint("WARN", "MAINFuncs/mainCode/checkForUpdates: Skipping checking for updates, as we can't tell if it's turned off or on. '{CONFIG_CheckForUpdates}'")
 
 
         # Sign in
-        print("MAINFuncs/mainCode/authenticate: Signing in...")
+        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/authenticate: Signing in...")
+        show_message("Signing you in...")
 
         if CONFIG_Authenticate == True:
             gc = UTILITYFuncs.getConnection("mainCode/Authenticate")
             if gc == True:
-                print("MAINFuncs/mainCode/authenticate: Signing in.")
+                UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/authenticate: Signing in...")
                 myAccount.Authenticate()
 
             elif gc == False:
-                print("MAINFuncs/mainCode/authenticate: Skipping signing in as you're not connected.")
+                UTILITYFuncs.logAndPrint("NOT CONNECTED", "MAINFuncs/mainCode/authenticate: Skipping signing in as you're not connected.")
                 window_main.show()
                 window_main.newsBox1.hide()
                 window_main.newsBox2.hide()
                 window_main.newsBox3.hide()
 
             else:
-                print("MAINFuncs/mainCode/authenticate: Skipping signing in as we can't tell if you're connected or not.")
+                UTILITYFuncs.logAndPrint("WARN", "MAINFuncs/mainCode/authenticate: Skipping signing in as we can't tell if you're connected or not.")
 
         elif CONFIG_Authenticate == False:
-            print("MAINFuncs/mainCode/authenticate: Skipping signing in as it's turned off.")
+            UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/authenticate: Skipping signing in as it's turned off.")
 
         else:
-            print(f"MAINFuncs/mainCode/authenticate: Skipping signing in as we can't tell if it's turned off or on. '{CONFIG_Authenticate}'")
+            UTILITYFuncs.logAndPrint("WARN", f"MAINFuncs/mainCode/authenticate: Skipping signing in as we can't tell if it's turned off or on. '{CONFIG_Authenticate}'")
 
         
         # Fetch news
-        print("THREADFuncs/mainCode/fetchNews: Fetching news...")
+        UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/fetchNews: Fetching news...")
+        show_message("Fetching news...")
         
         if CONFIG_FetchNews == True:
             gc = UTILITYFuncs.getConnection("mainCode/fetchNews")
             if gc == True:
-                print("THREADFuncs/mainCode/fetchNews: Fetching news...")
+                UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/fetchNews: Fetching news...")
                 UTILITYFuncs.log("INFO", "Fetching news...")
                 try:
-                    newsCodeRequest = requests.get("https://nfoert.pythonanywhere.com/jade/returnNews")
+                    newsCodeRequest = requests.get("https://nfoert.pythonanywhere.com/jadeLauncher/returnNews")
                     newsCodeRequest.raise_for_status
 
                 except Exception as e:
-                    print(f"THREADFuncs/mainCode/fetchNews: There was a problem fetching news. AT: Get news codes {e}")
-                    UTILITYFuncs.log("WARN", f"There was a problem fetching news. AT: Get news codes. {e}")
+                    UTILITYFuncs.logAndPrint("WARN", f"THREADFuncs/mainCode/fetchNews: There was a problem fetching news. AT: Get news codes {e}")
                     window_main.newsBox1.hide()
                     window_main.newsBox2.hide()
                     window_main.newsBox3.hide()
@@ -928,22 +1612,20 @@ class MAINFuncs:
                     newsCode3 = UTILITYFuncs.substring(ncrText, "3=", "&")
 
                 except Exception as e:
-                    print(f"THREADFuncs/mainCode/fetchNews: There was a problem substringing the codes out of the news code request. {e}")
-                    UTILITYFuncs.log("WARN", f"There was a problem substringing the codes out of the news code request. {e}")
+                    UTILITYFuncs.logAndPrint("WARN", "THREADFuncs/mainCode/fetchNews:There was a problem substringing the codes out of the news code request. {e}")
                     window_main.newsBox1.hide()
                     window_main.newsBox2.hide()
                     window_main.newsBox3.hide()
 
                 try:
-                    print("THREADFuncs/mainCode/fetchNews: Getting news requests...")
-                    newsRequest1 = requests.get(f"https://nfoert.pythonanywhere.com/jade/news?{newsCode1}&")
-                    newsRequest2 = requests.get(f"https://nfoert.pythonanywhere.com/jade/news?{newsCode2}&")
-                    newsRequest3 = requests.get(f"https://nfoert.pythonanywhere.com/jade/news?{newsCode3}&")
-                    print("THREADFuncs/mainCode/fetchNews: Done.")
+                    UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/fetchNews: Getting news requests...")
+                    newsRequest1 = requests.get(f"https://nfoert.pythonanywhere.com/jadeLauncher/news?{newsCode1}&")
+                    newsRequest2 = requests.get(f"https://nfoert.pythonanywhere.com/jadeLauncher/news?{newsCode2}&")
+                    newsRequest3 = requests.get(f"https://nfoert.pythonanywhere.com/jadeLauncher/news?{newsCode3}&")
+                    UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/fetchNews: Done.")
 
                 except Exception as e:
-                    print(f"THREADFuncs/mainCode/fetchNews: There was a problem getting the news requests. {e}")
-                    UTILITYFuncs.log("WARN", f"There was a problem getting the news requests. {e}")
+                    UTILITYFuncs.logAndPrint("WARN", f"THREADFuncs/mainCode/fetchNews: There was a problem getting the news requests. {e}")
                     window_main.newsBox1.hide()
                     window_main.newsBox2.hide()
                     window_main.newsBox3.hide()
@@ -951,26 +1633,26 @@ class MAINFuncs:
                 if newsRequest1.ok == True:
                     pass
                 else:
-                    print("THREADFuncs/mainCode/fetchNews: NEWS 1 FAIL")
+                    UTILITYFuncs.logAndPrint("WARN", "THREADFuncs/mainCode/fetchNews: NEWS 1 FAIL")
                     window_main.newsBox1.hide()
 
                 if newsRequest2.ok == True:
                     pass
                 else:
-                    print("THREADFuncs/mainCode/fetchNews: NEWS 2 FAIL")
+                    UTILITYFuncs.logAndPrint("WARN", "THREADFuncs/mainCode/fetchNews: NEWS 2 FAIL")
                     window_main.newsBox2.hide()
 
                 if newsRequest3.ok == True:
                     pass
                 else:
-                    print("THREADFuncs/mainCode/fetchNews: NEWS 3 FAIL")
+                    UTILITYFuncs.logAndPrint("WARN", "THREADFuncs/mainCode/fetchNews: NEWS 3 FAIL")
                     window_main.newsBox3.hide()
                     
                 
                 # News 1
                 nr1Text = newsRequest1.text
                 if "header=" in nr1Text:
-                    print("THREADFuncs/mainCode/fetchNews: News 1 is good!")
+                    UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/fetchNews: News 1 is good!")
                     news1Header = UTILITYFuncs.substring(nr1Text, "header=", ",text")
                     news1Text = UTILITYFuncs.substring(nr1Text, ",text=", ",date")
                     news1Date = UTILITYFuncs.substring(nr1Text, ",date=", ",url")
@@ -993,17 +1675,17 @@ class MAINFuncs:
 
 
                 elif "There is no news article that matches that code." in nr1Text:
-                    print(f"THREADFuncs/mainCode/fetchNews: There's no news article that matches that code for news article 1. Code is '{newsCode1}'")
+                    UTILITYFuncs.logAndPrint("WARN", f"THREADFuncs/mainCode/fetchNews: There's no news article that matches that code for news article 1. Code is '{newsCode1}'")
                     window_main.newsBox1.hide()
 
                 else:
-                    print("THREADFuncs/mainCode/fetchNews: There was a problem validating the first news request.")
+                    UTILITYFuncs.logAndPrint("WARN", "THREADFuncs/mainCode/fetchNews: There was a problem validating the first news request.")
                     window_main.newsBox1.hide()
 
                 # News 2
                 nr2Text = newsRequest2.text
                 if "header=" in nr2Text:
-                    print("THREADFuncs/mainCode/fetchNews: News 2 is good!")
+                    UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/fetchNews: News 2 is good!")
                     news2Header = UTILITYFuncs.substring(nr2Text, "header=", ",text")
                     news2Text = UTILITYFuncs.substring(nr2Text, ",text=", ",date")
                     news2Date = UTILITYFuncs.substring(nr2Text, ",date=", ",url")
@@ -1025,17 +1707,17 @@ class MAINFuncs:
                     window_main.date2.setAlignment(QtCore.Qt.AlignCenter)
 
                 elif "There is no news article that matches that code." in nr2Text:
-                    print(f"THREADFuncs/mainCode/fetchNews: There's no news article that matches that code for news article 2. Code is '{newsCode2}'")
+                    UTILITYFuncs.logAndPrint("WARN", f"THREADFuncs/mainCode/fetchNews: There's no news article that matches that code for news article 2. Code is '{newsCode2}'")
                     window_main.newsBox2.hide()
 
                 else:
-                    print("THREADFuncs/mainCode/fetchNews: There was a problem validating the second news request.")
+                    UTILITYFuncs.logAndPrint("WARN", "THREADFuncs/mainCode/fetchNews: There was a problem validating the second news request.")
                     window_main.newsBox2.hide()
 
                 # News 3
                 nr3Text = newsRequest3.text
                 if "header=" in nr3Text:
-                    print("THREADFuncs/mainCode/fetchNews: News 3 is good!")
+                    UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/fetchNews: News 3 is good!")
                     news3Header = UTILITYFuncs.substring(nr3Text, "header=", ",text")
                     news3Text = UTILITYFuncs.substring(nr3Text, ",text=", ",date")
                     news3Date = UTILITYFuncs.substring(nr3Text, ",date=", ",url")
@@ -1060,31 +1742,31 @@ class MAINFuncs:
                 
 
                 elif "There is no news article that matches that code." in nr3Text:
-                    print(f"THREADFuncs/mainCode/fetchNews: There's no news article that matches that code for news article 3. Code is '{newsCode3}'")
+                    UTILITYFuncs.logAndPrint("WARN", "THREADFuncs/mainCode/fetchNews: There's no news article that matches that code for news article 3. Code is '{newsCode3}'")
                     window_main.newsBox3.hide()
 
                 else:
-                    print("THREADFuncs/mainCode/fetchNews: There was a problem validating the third news request.")
+                    UTILITYFuncs.logAndPrint("WARN", "THREADFuncs/mainCode/fetchNews: There was a problem validating the third news request.")
                     window_main.newsBox3.hide()
 
 
                 # Check for emptiness deep inside themselves
                 if newsCode1 == "000":
-                    print("THREADFuncs/mainCode/fetchNews: Hiding news 1 as the code is 000.")
+                    UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/fetchNews: Hiding news 1 as the code is 000.")
                     window_main.newsBox1.hide()
 
                 else:
                     pass
 
                 if newsCode2 == "000":
-                    print("THREADFuncs/mainCode/fetchNews: Hiding news 2 as the code is 000.")
+                    UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/fetchNews: Hiding news 2 as the code is 000.")
                     window_main.newsBox2.hide()
 
                 else:
                     pass
 
                 if newsCode3 == "000":
-                    print("THREADFuncs/mainCode/fetchNews: Hiding news 3 as the code is 000.")
+                    UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/fetchNews: Hiding news 3 as the code is 000.")
                     window_main.newsBox3.hide()
 
                 else:
@@ -1098,8 +1780,7 @@ class MAINFuncs:
                     news1.date = news1Date
                     news1.url = news1Url
                 except Exception as e:
-                    print(f"There was a problem setting up news1 Class. {e}")
-                    UTILITYFuncs.log("WARN", f"There was a problem setting up news 1 class. {e}")
+                    UTILITYFuncs.logAndPrint("WARN", f"THREADFuncs/mainCode/fetchNews:There was a problem setting up news1 Class. {e}")
                     window_main.newsBox1.hide()
                 
                 try:
@@ -1109,8 +1790,7 @@ class MAINFuncs:
                     news2.url = news2Url
                 
                 except Exception as e:
-                    print(f"There was a problem setting up news2 Class. {e}")
-                    UTILITYFuncs.log("WARN", f"There was a problem setting up news 2 class. {e}")
+                    UTILITYFuncs.logAndPrint("WARN", f"THREADFuncs/mainCode/fetchNews: There was a problem setting up news2 Class. {e}")
                     window_main.newsBox2.hide()
 
                 try:
@@ -1120,331 +1800,97 @@ class MAINFuncs:
                     news3.url = news3Url
 
                 except Exception as e:
-                    print(f"There was a problem setting up news3 Class. {e}")
-                    UTILITYFuncs.log("WARN", f"There was a problem setting up news 3 class. {e}")
+                    UTILITYFuncs.logAndPrint("WARN", f"THREADFuncs/mainCode/fetchNews: There was a problem setting up news3 Class. {e}")
                     window_main.newsBox3.hide()
 
 
             elif gc == False:
-                print("THREADFuncs/mainCode/fetchNews: Skipping fetching of news as you're not conected.")
-                UTILITYFuncs.log("INFO", "Skipping fetching of news as you're not connected.")
+                UTILITYFuncs.logAndPrint("NOT CONNECTED", "THREADFuncs/mainCode/fetchNews: Skipping fetching of news as you're not conected.")
                 window_main.newsBox1.hide()
                 window_main.newsBox2.hide()
                 window_main.newsBox3.hide()
                 window_main.show()
 
             else:
-                print("THREADFuncs/mainCode/fetchNews: Skipping fetching of news as we can't decide if you're connected or not.")
-                UTILITYFuncs.log("INFO", "Skipping fetching of news as we can't decide if you're connected or not.")
+                UTILITYFuncs.logAndPrint("WARN", "THREADFuncs/mainCode/fetchNews: Skipping fetching of news as we can't decide if you're connected or not.")
                 window_main.newsBox1.hide()
                 window_main.newsBox2.hide()
                 window_main.newsBox3.hide()
 
 
         elif CONFIG_FetchNews == False:
-            print("THREADFuncs/mainCode/fetchNews: Skipping fetching of news as it's not allowed.")
-            UTILITYFuncs.log("INFO", "Skipping fetching of news as it's not allowed.")
+            UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/fetchNews: Skipping fetching of news as it's not allowed.")
             window_main.newsBox1.hide()
             window_main.newsBox2.hide()
             window_main.newsBox3.hide()
+        
         else:
-            print("THREADFuncs/mainCode/fetchNews: Skipping news fetch as we can't determine if it's allowed or not.")
-            UTILITYFuncs.log("INFO", "Skipping news fetch as we can't determine if it's allowed or not.")
+            UTILITYFuncs.logAndPrint("WARN", "THREADFuncs/mainCode/fetchNews: Skipping news fetch as we can't determine if it's allowed or not.")
 
         # Update Id
-        getId = Launcher.getId()
+        UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/updateLauncherId: Updating Launcher Id...")
+        show_message("Updating Launcher ID...")
+        Launcher.getId()
         Launcher.username = myAccount.username
         Launcher.updateStatus()
 
+        # Check for suspension
         if myAccount.suspended == "no":
-            print("Main code check: not suspended")
-            window_main.show()
-
+            UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/suspensionCheck: Not suspended.")
 
         else:
-            print("Main code check: suspended.")
+            UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/suspensionCheck: Suspended.")
             window_splash.hide()
             dialog_accountSuspended.show()
 
         # Set greeting
+        UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/setGreeting: Setting greeting...")
+        show_message("Setting greeting message...")
         now = datetime.datetime.now().hour
-        if now == 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11:
-            #Good morning
-            window_main.welcomeBox_text.setText("Good morning.")
-
-        elif now == 12 or 13 or 14 or 15 or 14 or 15:
-            #Good afternoon
-            window_main.welcomeBox_text.setText("Good afternoon.")
-
-        elif now == 16 or 17 or 18 or 19 or 20 or 21 or 22 or 23:
-            # Good evening
-            window_main.welcomeBox_text.setText("Good evening.")
+        now = str(now)
+        if len(now) == 1:
+            now = f"0{now}"
 
         else:
-            # Welcome back
+            now = now
+
+        if any(x in now for x in ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"]) == True:
+            window_main.welcomeBox_text.setText("Good morning.")
+            UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/setGreeting: Selected welcome message: Good morning.")
+
+        elif any(x in now for x in ["12", "13", "14", "15"]) == True:
+            window_main.welcomeBox_text.setText("Good afternoon.")
+            UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/setGreeting: Selected welcome message: Good afternoon.")
+
+        elif any(x in now for x in ["16", "17", "18", "19", "20", "21", "22", "23"]) == True:
+            window_main.welcomeBox_text.setText("Good evening.")
+            UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/setGreeting: Selected welcome message: Good evening.")
+
+        else:
             window_main.welcomeBox_text.setText("Welcome back to the")
+            UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/setGreeting: Selected welcome message (hit else): Welcome back to the ")
+
 
         window_main.welcomeBox_text.setFont(QFont("Calibri Bold", 16))
         window_main.welcomeBox_text.setAlignment(QtCore.Qt.AlignCenter)
 
+        
         # Check if Jade Assistant exists, or needs an update.
+        show_message("Loading Jade Assistant...")
+        JadeAssistant.checkForUpdates()
 
-        jadeAssistantWindows = Path("Jade Assistant.exe").exists()
-        jadeAssistantMac = Path("Jade Assistant").exists()
-        if jadeAssistantWindows == True or jadeAssistantMac == True:
-            print("Jade Assistant exists!")
-            # It exists! Now check for existance of version file
-            jadeAssistantVersionFileExists = Path("jadeAssistantVersion.txt").exists()
-            if jadeAssistantVersionFileExists == True:
-                #It exists! Now check for updates
-                jadeAssistantVersionFile = open("jadeAssistantVersion.txt", "r")
-                jadeAssistantVersionFileContents = jadeAssistantVersionFile.readlines()
-                jadeAssistantVersion_MAJOR = jadeAssistantVersionFileContents[0]
-                jadeAssistantVersion_MINOR = jadeAssistantVersionFileContents[1]
-                jadeAssistantVersion_PATCH = jadeAssistantVersionFileContents[2]
+        elapsedTime = runDuration() - startElapsedTime
+        elapsedTime = round(elapsedTime)
+        show_message("Done!")
+        sleep(1.5)
+        window_main.show()
 
-                try:
-                    jadeAssistantVersionFromServer = requests.get("https://nfoert.pythonanywhere.com/jade/jadeAssistantVersion")
-                    jadeAssistantVersionFromServer.raise_for_status()
-
-                except:
-                    print("There was a problem checking Jade Assistant for updates!")
-                    window_jadeAssistantMenu.launchButton.show()
-                    window_jadeAssistantMenu.updateButton.hide()
-                    window_jadeAssistantMenu.downloadButton.hide()
-                    window_jadeAssistantMenu.removeButton.show()
-
-                javfsMAJOR = UTILITYFuncs.substring(jadeAssistantVersionFromServer.text, "major=", ",minor")
-                javfsMINOR = UTILITYFuncs.substring(jadeAssistantVersionFromServer.text, "minor=", ",patch")
-                javfsPATCH = UTILITYFuncs.substring(jadeAssistantVersionFromServer.text, "patch=", "&")
-
-                
-
-                if jadeAssistantVersion_MAJOR < javfsMAJOR:
-                    # Updates required
-                    window_jadeAssistantMenu.launchButton.hide()
-                    window_jadeAssistantMenu.updateButton.show()
-                    window_jadeAssistantMenu.downloadButton.hide()
-                    window_jadeAssistantMenu.removeButton.show()
-                    print(f"Updates required. {jadeAssistantVersion_MAJOR} < {javfsMAJOR}")
-                    window_jadeAssistantMenu.version.setText(f"Update to version {javfsMAJOR}.{javfsMINOR}.{javfsPATCH}")
-
-                elif jadeAssistantVersion_MINOR < javfsMINOR:
-                    # Updates required
-                    window_jadeAssistantMenu.launchButton.hide()
-                    window_jadeAssistantMenu.updateButton.show()
-                    window_jadeAssistantMenu.downloadButton.hide()
-                    window_jadeAssistantMenu.removeButton.show()
-                    print(f"Updates required. {jadeAssistantVersion_MINOR} < {javfsMINOR}")
-                    window_jadeAssistantMenu.version.setText(f"Update to version {javfsMAJOR}.{javfsMINOR}.{javfsPATCH}")
-
-                elif jadeAssistantVersion_PATCH < javfsPATCH:
-                    # Updates required
-                    window_jadeAssistantMenu.launchButton.hide()
-                    window_jadeAssistantMenu.updateButton.show()
-                    window_jadeAssistantMenu.downloadButton.hide()
-                    window_jadeAssistantMenu.removeButton.show()
-                    print(f"Updates required. {jadeAssistantVersion_PATCH} < {javfsPATCH}")
-                    window_jadeAssistantMenu.version.setText(f"Update to version {javfsMAJOR}.{javfsMINOR}.{javfsPATCH}")
-
-                else:
-                    # Updates not required
-                    window_jadeAssistantMenu.launchButton.show()
-                    window_jadeAssistantMenu.updateButton.hide()
-                    window_jadeAssistantMenu.downloadButton.hide()
-                    window_jadeAssistantMenu.removeButton.show()
-                    print("Updates not required.")
-                    window_jadeAssistantMenu.version.setText(f"Version {javfsMAJOR}.{javfsMINOR}.{javfsPATCH}")
-                        
-
-        elif jadeAssistantWindows == False or jadeAssistantMac == False:
-            # It dosen't exist! Show button for downloading.
-            print("Jade Assistant dosen't exist!")
-            window_jadeAssistantMenu.launchButton.hide()
-            window_jadeAssistantMenu.updateButton.hide()
-            window_jadeAssistantMenu.downloadButton.show()
-            window_jadeAssistantMenu.removeButton.hide()
-            window_jadeAssistantMenu.version.setText(f"Download version {javfsMAJOR}.{javfsMINOR}.{javfsPATCH}")
-
-        else:
-            #Unable to tell if it exists or not
-            UTILITYFuncs.error("Unable to tell if Jade Assistant exists or not!")
-
-        window_jadeAssistantMenu.version.setAlignment(QtCore.Qt.AlignCenter)
+        UTILITYFuncs.logAndPrint("INFO", f"THREADFuncs/mainCode: Finished! Took {elapsedTime} seconds.")
 
         print("=================================")
-        print("THREADFuncs/mainCode/: Finished! ")
+        print("MAINFuncs/mainCode/: Finished! ")
         print("=================================")
             
-
-class THREADFuncs:
-    def __init__(self):
-        pass
-
-    def downloadJadeAssistant():
-        global downloadJadeAssistantVar
-        global guiLoopList
-        global killThreads
-        while True:
-            if downloadJadeAssistantVar == True:
-                guiLoopList.append('window_jadeAssistantMenu.launchButton.hide()')
-                guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
-                guiLoopList.append('window_jadeAssistantMenu.downloadButton.show()')
-                guiLoopList.append('window_jadeAssistantMenu.removeButton.hide()')
-                guiLoopList.append('window_jadeAssistantMenu.downloadButton.setEnabled(False)')
-                guiLoopList.append('window_jadeAssistantMenu.downloadButton.setText("Downloading...")')
-                if platform.system() == "Windows":
-                    try:
-                        print("Downloading Jade Assistant!")
-                        jadeAssistantDownload = requests.get("https://github.com/nfoert/jadeassistant/raw/main/Jade%20Assistant.exe")
-                        jadeAssistantDownload.raise_for_status()
-                        guiLoopList.append('window_jadeAssistantMenu.updateButton.setText("Saving...")')
-                        jadeAssistant = open("Jade Assistant.exe", "wb")
-                        for chunk in jadeAssistantDownload.iter_content(100000):
-                            jadeAssistant.write(chunk)
-
-                        jadeAssistant.close()
-                        downloadJadeAssistantVar = False
-                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
-                        guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
-                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
-                        print("Done downloading Jade Assistant!")
-
-                    except Exception as e:
-                        print(f"There was a problem downloading Jade Assistant! {e}")
-                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
-                        guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.show()')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setEnabled(False)')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setText("There was a problem.")')
-                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
-
-                elif platform.system() == "Darwin":
-                    try:
-                        jadeAssistantDownload = requests.get("https://github.com/nfoert/jadeassistant/raw/main/Jade%20Assistant")
-                        jadeAssistantDownload.raise_for_status()
-                        guiLoopList.append('window_main.updateButton.setText("Saving...")')
-                        jadeAssistant = open("Jade Assistant", "wb")
-                        for chunk in jadeAssistantDownload.iter_content(100000):
-                            jadeAssistant.write(chunk)
-
-                        jadeAssistant.close()
-                        downloadJadeAssistantVar = False
-                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
-                        guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
-                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
-
-                    except Exception as e:
-                        print(f"There was a problem downloading Jade Assistant! {e}")
-                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
-                        guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.show()')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setEnabled(False)')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setText("There was a problem.")')
-                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
-
-                else:
-                    print("Your OS isn't supported!")
-                    UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac or Windows.")
-
-            elif killThreads == True:
-                return False
-
-            else:
-                sleep(1)
-                continue
-
-    def updateJadeAssistant():
-        global updateJadeAssistantVar
-        global guiLoopList
-        global killThreads
-        while True:
-            if updateJadeAssistantVar == True:
-                print("Updating Jade Assistant...")
-                guiLoopList.append('window_jadeAssistantMenu.launchButton.hide()')
-                guiLoopList.append('window_jadeAssistantMenu.updateButton.show()')
-                guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
-                guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
-                guiLoopList.append('window_jadeAssistantMenu.updateButton.setEnabled(False)')
-                guiLoopList.append('window_jadeAssistantMenu.updateButton.setText("Downloading...")')
-                if platform.system() == "Windows":
-                    try:
-                        os.remove("Jade Assistant.exe")
-                        jadeAssistantDownload = requests.get("https://github.com/nfoert/jadeassistant/raw/main/Jade%20Assistant.exe")
-                        jadeAssistantDownload.raise_for_status()
-                        guiLoopList.append('window_jadeAssistantMenu.updateButton.setText("Saving...")')
-                        jadeAssistant = open("Jade Assistant.exe", "wb")
-                        for chunk in jadeAssistantDownload.iter_content(100000):
-                            jadeAssistant.write(chunk)
-
-                        jadeAssistant.close()
-                        updateJadeAssistantVar = False
-                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
-                        guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
-                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
-                        print("Done updating Jade Assistant.")
-
-                    except Exception as e:
-                        print(f"There was a problem updating Jade Assistant! {e}")
-                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
-                        guiLoopList.append('window_jadeAssistantMenu.updateButton.show()')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setEnabled(False)')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setText("There was a problem.")')
-                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
-
-                elif platform.system() == "Darwin":
-                    try:
-                        os.remove("Jade Assistant")
-                        jadeAssistantDownload = requests.get("https://github.com/nfoert/jadeassistant/raw/main/Jade%20Assistant")
-                        jadeAssistantDownload.raise_for_status()
-                        guiLoopList.append('window_jadeAssistantMenu.updateButton.setText("Saving...")')
-                        jadeAssistant = open("Jade Assistant", "wb")
-                        for chunk in jadeAssistantDownload.iter_content(100000):
-                            jadeAssistant.write(chunk)
-
-                        jadeAssistant.close()
-                        updateJadeAssistantVar = False
-                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
-                        guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
-                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
-                        print("Done updating Jade Assistant.")
-
-                    except Exception as e:
-                        print(f"There was a problem updating Jade Assistant! {e}")
-                        guiLoopList.append('window_jadeAssistantMenu.launchButton.show()')
-                        guiLoopList.append('window_jadeAssistantMenu.updateButton.show()')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.hide()')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setEnabled(False)')
-                        guiLoopList.append('window_jadeAssistantMenu.downloadButton.setText("There was a problem.")')
-                        guiLoopList.append('window_jadeAssistantMenu.removeButton.show()')
-
-                else:
-                    print("Your OS isn't supported!")
-                    UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac or Windows.")
-
-            elif killThreads == True:
-                return False
-
-            else:
-                sleep(1)
-                continue
-
-# -----
-# Setup threads
-# ----
-downloadJadeAssistantThread = threading.Thread(target=THREADFuncs.downloadJadeAssistant)
-updateJadeAssistantThread = threading.Thread(target=THREADFuncs.updateJadeAssistant)
-
-downloadJadeAssistantThread.start()
-updateJadeAssistantThread.start()
-                    
-
-
 class UIFuncs:
     '''A group of functions that the UI uses.'''
     global SignedIn
@@ -1476,13 +1922,13 @@ class UIFuncs:
                 window_signIn.show()
 
             else:
-                print("There was a problem checking if you're signed in or not to open the Account screen.")
+                UTILITYFuncs.logAndPrint("INFO", "UIFuncs/openAccountScreen: There was a problem checking if you're signed in or not to open the Account screen.")
 
         elif gc == False:
-            print("You're not connected!")
+            UTILITYFuncs.logAndPrint("INFO", "UIFuncs/openAccountScreen: You're not connected!")
 
         else:
-            print("Unable to determine connectivity.")
+            UTILITYFuncs.logAndPrint("INFO", "UIFuncs/openAccountScreen: Unable to determine connectivity.")
 
     def openPlus():
         global myAccount
@@ -1494,7 +1940,7 @@ class UIFuncs:
             window_plus.show()
 
         else:
-            print("There was a problem checking if you have Jade Plus or not.")
+            UTILITYFuncs.logAndPrint("INFO", "UIFuncs/openPlus: There was a problem checking if you have Jade Plus or not.")
 
     def openJadeBar():
         window_jadeBar.show()
@@ -1511,7 +1957,30 @@ class UIFuncs:
         myAccount.signOut()
 
     def jadeAssistantButton():
-        window_jadeAssistantMenu.show()
+        global SignedIn
+        global selectedApp
+        global TruePath
+        gc = UTILITYFuncs.getConnection("Open Jade Assistant Menu")
+        if gc == True:
+            if SignedIn == True:
+                selectedApp = "Jade Assistant"
+                JadeAssistant.openAppMenu()
+
+            else:
+                UTILITYFuncs.notification("You're not signed in!", "Sign in first, then try again.")
+
+        else:
+            accountFile = open(f"{TruePath}account.txt", "r")
+            accountFileRead = accountFile.readlines()
+            accountFile.close()
+
+            if len(accountFileRead) == 2:
+                selectedApp = "Jade Assistant"
+                JadeAssistant.state = "readyoffline"
+                JadeAssistant.openAppMenu()
+
+            else:
+                UTILITYFuncs.notification("You're not signed in!", "Connnect to internet, restart the Launcher, sign in, then try again.")
 
     def switchToCreateAccount():
         window_signIn.usernameBox_edit.clear()
@@ -1536,8 +2005,7 @@ class UIFuncs:
             window_signIn.passwordBox_edit.setEchoMode(2)
 
         else:
-            print("There was a problem setting show/hide password.")
-            UTILITYFuncs.log("WARN", "There was a problem setting show/hide password.")
+            UTILITYFuncs.logAndPrint("WARN", "UIFuncs/passwordToggle: There was a problem setting show/hide password.")
 
     def createAccountButton():
         global myAccount
@@ -1573,7 +2041,7 @@ class UIFuncs:
         news3.expand()
 
     def openChangelog():
-        WEBVIEW.openWebView("https://nofoert.wixsite.com/jade/changelog")
+        WEBVIEW.openWebView("https://nofoert.wixsite.com/jade/blog/categories/changelogs")
 
     #Expanded news
     def openUrlButton():
@@ -1583,8 +2051,7 @@ class UIFuncs:
         global news3
 
         if expanded == "0":
-            print("There was a problem expanding news. Nothing is actually expanded?")
-            UTILITYFuncs.log("WARN", "There was a problem expanding news. Nothing is actually expanded?")
+            UTILITYFuncs.logAndPrint("WARN", "UIFuncs/openUrlButton: There was a problem expanding news. Nothing is actually expanded?")
 
         elif expanded == "1":
             news1.openUrl()
@@ -1596,8 +2063,7 @@ class UIFuncs:
             news3.openUrl()
 
         else:
-            print("There was a problem determining what news article to open a url for.")
-            UTILITYFuncs.log("WARN", "There was a problem determinign what news article to open a url for.")
+            UTILITYFuncs.logAndPrint("WARN", "UIFuncs/openUrlButton: There was a problem determining what news article to open a url for.")
 
     def quitErrorDialog():
         global killThreads
@@ -1612,8 +2078,7 @@ class UIFuncs:
                 sys.exit()
             
             except Exception as e:
-                print("There was a problem restarting.")
-                UTILITYFuncs.error(f"There was a problem restarting. {e}")
+                UTILITYFuncs.logAndPrint("WARN", f"UIFuncs/restartAction: There was a problem restarting. {e}")
 
         elif platform.system == "Darwin":
             try:
@@ -1621,63 +2086,79 @@ class UIFuncs:
                 sys.exit()
 
             except Exception as e:
-                print("There was a problem restarting.")
-                UTILITYFuncs.error(f"There was a problem restarting. {e}")
+                UTILITYFuncs.logAndPrint("INFO", f"UIFuncs/restartAction: There was a problem restarting. {e}")
 
-    def downloadJadeAssistant():
-        print("Download button pressed for Jade Assistant!")
-        global downloadJadeAssistantVar
-        downloadJadeAssistantVar = True
+    def closeNotification():
+        window_notification.hide()
 
-    def updateJadeAssistant():
-        print("Update button pressed for Jade Assistant!")
-        global updateJadeAssistantVar
-        updateJadeAssistantVar = True
+    def openAbout():
+        dialog_about.show()
 
-    def launchJadeAssistant():
-        global killThreads
+    def aboutWebsiteButton():
+        WEBVIEW.openWebView("https://nofoert.wixsite.com/jade")
+
+    def aboutLogButton():
+        if platform.system() == 'Darwin':
+            subprocess.call(('open', "JadeLauncherLog.txt"))
+
+        elif platform.system() == 'Windows':
+            os.startfile("JadeLauncherLog.txt")
+
+        else:
+            UTILITYFuncs.logAndPrint("INFO", "UIFuncs/aboutLogButton: Your OS isn't supported! Please use Windows or Mac.")
+            UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
+
+    def openChangePassword():
+        global myAccount
         try:
-            if platform.system() == "Windows":
-                subprocess.Popen("Jade Assistant.exe")
-                killThreads = True
-                sys.exit()
-                
-            elif platform.system() == "Darwin":
-                subprocess.Popen("Jade Assistant")
-                killThreads = True
-                sys.exit()
-                
-            else:
-                print("Your OS isn't supported!")
-                UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac OS or Windows.")
+            createVerificationCode = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/createVerificationCode?username={myAccount.username},password={myAccount.password}&")
+            createVerificationCode.raise_for_status()
+            print(createVerificationCode.text)
+            window_changePassword.label.setText(f"We just sent a verification code to {myAccount.email}. Please enter it below.")
+            window_changePassword.label.setFont(QFont("Calibri", 8))
+            window_changePassword.label.setAlignment(QtCore.Qt.AlignCenter)
+            window_changePassword.show()
 
         except Exception as e:
-            UTILITYFuncs.error(f"There was a problem launching Jade Assistant! {e}")
+            UTILITYFuncs.logAndPrint("WARN", f"UIFuncs/openChangePassword: There was a problem creating a verification code. '{e}'")
+            UTILITYFuncs.notification("There was a problem creating a verification code.", f"{e}")
 
-    def removeJadeAssistant():
-        try:
-            if platform.system() == "Windows":
-                os.system('taskkill /F /IM "Jade Assistant.exe"')
-                os.remove("Jade Assistant.exe")
-                guiLoopList.append('window_jadeAssistantMenu.launchButton.hide()')
-                guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
-                guiLoopList.append('window_jadeAssistantMenu.downloadButton.show()')
-                guiLoopList.append('window_jadeAssistantMenu.removeButton.hide()')
+    def changePassword():
+        myAccount.changePassword()
 
-            elif platform.system() == "Darwin":
-                os.system('killall "Jade Assistant.exe"')
-                os.remove("Jade Assistant")
-                guiLoopList.append('window_jadeAssistantMenu.launchButton.hide()')
-                guiLoopList.append('window_jadeAssistantMenu.updateButton.hide()')
-                guiLoopList.append('window_jadeAssistantMenu.downloadButton.show()')
-                guiLoopList.append('window_jadeAssistantMenu.removeButton.hide()')
+    # App Functions
+    def launchApp():
+        global selectedApp
+        if selectedApp == "Jade Assistant":
+            JadeAssistant.launchApp()
 
-            else:
-                print("Your OS isn't supported!")
-                UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac OS or Windows.")
+        else:
+            return False
 
-        except Exception as e:
-            UTILITYFuncs.error(f"There was a problem removing Jade Assistant! {e}")
+    def removeApp():
+        global selectedApp
+        if selectedApp == "Jade Assistant":
+            JadeAssistant.removeApp()
+
+        else:
+            return False
+    
+    def downloadApp():
+        global selectedApp
+        if selectedApp == "Jade Assistant":
+            JadeAssistant.downloadAppVar = True
+
+        else:
+            return False
+
+    def updateApp():
+        global selectedApp
+        if selectedApp == "Jade Assistant":
+            JadeAssistant.updateAppVar = True
+
+        else:
+            return False
+    # -----
 
     
 
@@ -1701,9 +2182,10 @@ UTILITYFuncs.log("INFO", "-----")
 
 # Create Windows
 app = QtWidgets.QApplication(sys.argv)
+screen = app.primaryScreen()
 
 if developmental == False:
-    print("Loading like it's an executable.")
+    UTILITYFuncs.logAndPrint("INFO", "PyQt5: Loading like it's an executable.")
     # Load like an exe
     try:
         window_accountDetails = uic.loadUi(str(PurePath(resource_path("accountDetails.ui"))))
@@ -1718,21 +2200,22 @@ if developmental == False:
         window_plusOwned = uic.loadUi(str(PurePath(resource_path("plusOwned.ui"))))
         window_storeDetails = uic.loadUi(str(PurePath(resource_path("storeDetails.ui"))))
         window_storeNotSignedIn = uic.loadUi(str(PurePath(resource_path("storeNotSignedIn.ui"))))
-        window_jadeAssistantMenu = uic.loadUi(str(PurePath(resource_path("jadeAssistantMenu.ui"))))
         window_expandedNews = uic.loadUi(str(PurePath(resource_path("expandedNews.ui"))))
         window_changelog = uic.loadUi(str(PurePath(resource_path("changelog.ui"))))
         window_webView = uic.loadUi(str(PurePath(resource_path("webView.ui"))))
+        window_changePassword = uic.loadUi(str(PurePath(resource_path("changePassword.ui"))))
+        window_appMenu = uic.loadUi(str(PurePath(resource_path("appMenu.ui"))))
         dialog_signInFailure = uic.loadUi(str(PurePath(resource_path("signInFailure.ui"))))
         dialog_accountSuspended = uic.loadUi(str(PurePath(resource_path("accountSuspended.ui"))))
         dialog_error = uic.loadUi(str(PurePath(resource_path("error.ui"))))
+        dialog_about = uic.loadUi(str(PurePath(resource_path("about.ui"))))
 
     except Exception as e:
-        print(f"There was a problem creating windows! (During a non-developmental run) {e}")
-        UTILITYFuncs.log("FATAL", f"There was a problem creating windows! {e}")
+        UTILITYFuncs.logAndPrint("FATAL", f"PyQt5: There was a problem creating windows! (During a non-developmental run) {e}")
         UTILITYFuncs.error(f"There was a problem creating windows! (During a non-developmental run {e}")
 
 elif developmental == True:
-    print("Loading like it's a .py")
+    UTILITYFuncs.logAndPrint("INFO", "PyQt5: Loading like it's a .py")
     # Load normally
     try:
         window_accountDetails = uic.loadUi(str(PurePath("ui/accountDetails.ui")))
@@ -1747,23 +2230,23 @@ elif developmental == True:
         window_plusOwned = uic.loadUi(str(PurePath("ui/plusOwned.ui")))
         window_storeDetails = uic.loadUi(str(PurePath("ui/storeDetails.ui")))
         window_storeNotSignedIn = uic.loadUi(str(PurePath("ui/storeNotSignedIn.ui")))
-        window_jadeAssistantMenu = uic.loadUi(str(PurePath("ui/jadeAssistantMenu.ui")))
         window_expandedNews = uic.loadUi(str(PurePath("ui/expandedNews.ui")))
         window_changelog = uic.loadUi(str(PurePath("ui/changelog.ui")))
         window_webView = uic.loadUi(str(PurePath("ui/webView.ui")))
+        window_changePassword = uic.loadUi(str(PurePath("ui/changePassword.ui")))
+        window_appMenu = uic.loadUi(str(PurePath("ui/appMenu.ui")))
         dialog_signInFailure = uic.loadUi(str(PurePath("ui/signInFailure.ui")))
         dialog_accountSuspended = uic.loadUi(str(PurePath("ui/accountSuspended.ui")))
         dialog_error = uic.loadUi(str(PurePath("ui/error.ui")))
+        dialog_about = uic.loadUi(str(PurePath("ui/about.ui")))
 
     except Exception as e:
-        print(f"There was a problem creating windows! (During a developental run) {e}")
-        UTILITYFuncs.log("FATAL", f"There was a problem creating windows! {e}")
-        UTILITYFuncs.error(f"There was a problem creating windows! (During a developmental run {e}")
+       UTILITYFuncs.logAndPrint("FATAL", f"PyQt5: There was a problem creating windows! (During a developental run) {e}")
+       UTILITYFuncs.error(f"There was a problem creating windows! (During a developmental run {e}")
         
 
 else:
-    print("There was a terrible problem when opening windows. It it developental? We dont know.")
-    UTILITYFuncs.log("FATAL", "There was a problem determining if it's developmental or not.")
+    UTILITYFuncs.logAndPrint("FATAL", f"PyQt5: There was a *terrible* problem when opening windows. It it in developental mode? We dont know. Variable is '{developmental}'")
     UTILITYFuncs.error(f"There was a problem determining if we're running as developental or not. Variable is '{developmental}'")
     sys.exit()
 
@@ -1776,7 +2259,6 @@ window_offline.button.clicked.connect(UIFuncs.closeOffline)
 window_main.leftBox_jadeAccountButton.clicked.connect(UIFuncs.openAccountScreen)
 #window_main.leftBox_jadeBarButton.clicked.connect(UIFuncs.openJadeBar)
 #window_main.leftBox_plusButton.clicked.connect(UIFuncs.openPlus)
-window_main.leftBox_powerButton.clicked.connect(UIFuncs.stopAll)
 window_main.leftBox_jadeAssistantButton.clicked.connect(UIFuncs.jadeAssistantButton)
 window_main.button1.clicked.connect(UIFuncs.expandNews1)
 window_main.button2.clicked.connect(UIFuncs.expandNews2)
@@ -1784,15 +2266,17 @@ window_main.button3.clicked.connect(UIFuncs.expandNews3)
 window_main.changelogButton.clicked.connect(UIFuncs.openChangelog)
 window_main.actionQuit_Jade_Launcher.triggered.connect(UIFuncs.stopAll)
 window_main.actionRestart_Jade_Launcher.triggered.connect(UIFuncs.restartAction)
+window_main.action_About.triggered.connect(UIFuncs.openAbout)
 
 # Sign In Screen
 window_signIn.signInBox_button.clicked.connect(UIFuncs.signInButton)
 window_signIn.switchWindowBox_button.clicked.connect(UIFuncs.switchToCreateAccount)
 window_signIn.passwordBox_show.stateChanged.connect(UIFuncs.passwordToggle)
+window_signIn.signInBox_button.setShortcut("Return")
 
 # Account details
 window_accountDetails.buttonsBox_signOut.clicked.connect(UIFuncs.signOutButton)
-window_accountDetails.buttonsBox_changePassword.hide()
+window_accountDetails.buttonsBox_changePassword.clicked.connect(UIFuncs.openChangePassword)
 
 # Create Account
 window_createAccount.switchWindowBox_button.clicked.connect(UIFuncs.switchToSignIn)
@@ -1817,21 +2301,38 @@ window_webView.web.loadFinished.connect(WEBVIEW.doneLoading)
 window_webView.web.loadStarted.connect(WEBVIEW.startLoading)
 
 # Jade Assistant menu
-window_jadeAssistantMenu.launchButton.clicked.connect(UIFuncs.launchJadeAssistant)
-window_jadeAssistantMenu.downloadButton.clicked.connect(UIFuncs.downloadJadeAssistant)
-window_jadeAssistantMenu.updateButton.clicked.connect(UIFuncs.updateJadeAssistant)
-window_jadeAssistantMenu.removeButton.clicked.connect(UIFuncs.removeJadeAssistant)
+window_appMenu.launchButton.clicked.connect(UIFuncs.launchApp)
+window_appMenu.downloadButton.clicked.connect(UIFuncs.downloadApp)
+window_appMenu.updateButton.clicked.connect(UIFuncs.updateApp)
+window_appMenu.removeButton.clicked.connect(UIFuncs.removeApp)
+window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
+
+# Notification window
+window_notification.button.clicked.connect(UIFuncs.closeNotification)
+window_notification.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+
+# About dialog
+dialog_about.version.setText(Version_TOTAL)
+dialog_about.version.setFont(QFont("Calibri", 16))
+dialog_about.version.setAlignment(QtCore.Qt.AlignLeft)
+dialog_about.button.clicked.connect(UIFuncs.aboutWebsiteButton)
+dialog_about.logButton.clicked.connect(UIFuncs.aboutLogButton)
+
+# Change Password Window
+window_changePassword.button.clicked.connect(UIFuncs.changePassword)
+
+# App Menu
+window_appMenu.progressBar.hide()
 
 # -----
 # Set properties of windows
+# -----
 window_jadeBar.move(10, 10)
-window_main.VERSION.setText(f"Version BETA {Version_MAJOR}.{Version_MINOR}.{Version_PATCH}")
-window_main.VERSION.setFont(QFont("Calibri", 10))
 
 # Splash Text
 splashTexts = ["It's nice to see you!", "Hey there!", "This is some splash text!"]
 splashTextChoice = random.choice(splashTexts)
-print(f"Selected splash text: '{splashTextChoice}'")
+UTILITYFuncs.logAndPrint("INFO", f"PyQt5: Selected splash text: '{splashTextChoice}'")
 window_main.splash.setText(f"[ {splashTextChoice} ]")
 window_main.splash.setFont(QFont("Calibri", 18))
 
@@ -1841,37 +2342,85 @@ window_main.splash.hide()
 window_main.offlineLabel.hide()
 
 
+#Can't seem to get to work.
+
+# Check sys.argv
+def checkArgs():
+    global doMain
+    try:
+        if sys.argv[1] == "webview":
+            UTILITYFuncs.logAndPrint("INFO", "checkArgs: Found 'webview' argument")
+            WEBVIEW.openWebView(sys.argv[2])
+            doMain = False
+
+        elif sys.argv[1] == "help":
+            print("-----")
+            print("Jade Launcher Arguments")
+            print("    - Use 'Jade Launcher.exe' to open the Launcher.")
+            print("    - Use 'Jade Launcher.exe webview <url>' to use the Launcher's webview capabilities.")
+            print("-----")
+            doMain = False
+
+        else:
+            UTILITYFuncs.logAndPrint("INFO", "checkArgs: No sys.argv detected. Running normally.")
+            doMain = True
+
+    except:
+        UTILITYFuncs.logAndPrint("INFO", "checkArgs: No sys.argv detected. Running normally.")
+        doMain = True
+
+checkArgs()
+
 # ----------
 # Start App
 # ----------
-myAccount = Account("False", "no", "loading...")
-
-news1 = News("loading", "loading", "loading", "loading", "1")
-news2 = News("loading", "loading", "loading", "loading", "2")
-news3 = News("loading", "loading", "loading", "loading", "3")
-
-Launcher = LauncherId("loading", "loading") 
-
 def guiLoop():
     global guiLoopList
     if len(guiLoopList) >= 1:
         try:
-            print(f"Running code '{guiLoopList[0]}'")
+            UTILITYFuncs.logAndPrint("INFO", f"guiLoop: Running code '{guiLoopList[0]}'")
             exec(guiLoopList[0])
             guiLoopList.remove(guiLoopList[0])
 
         except Exception as e:
-            print(f"There was a problem running some code! {e}")
+            UTILITYFuncs.logAndPrint("GUI LOOP CODE RUN FAILURE", f"guiLoop: There was a problem running some code! {e}")
             guiLoopList.remove(guiLoopList[0])
             UTILITYFuncs.error(f"The gui loop had a problem running some code! '{e}'")
 
-guiLoopTimer = QTimer()
-guiLoopTimer.timeout.connect(guiLoop)
-guiLoopTimer.start(100)
+if doMain == True:
+    guiLoopTimer = QTimer()
+    guiLoopTimer.timeout.connect(guiLoop)
+    guiLoopTimer.start(1)
 
-firstGC = UTILITYFuncs.getConnection("main")
-if firstGC == True:
-    MAINFuncs.mainCode()
+    myAccount = Account("False", "no", "loading...")
 
-app.exec()
+    news1 = News("loading", "loading", "loading", "loading", "1")
+    news2 = News("loading", "loading", "loading", "loading", "2")
+    news3 = News("loading", "loading", "loading", "loading", "3")
+
+    Launcher = LauncherId("loading", "loading") 
+
+    firstGC = UTILITYFuncs.getConnection("main")
+    if firstGC == True:
+        JadeAssistantDescription = "Jade is a virtual assistant for your computer's desktop designed to be as helpful as possible, while being able to change size to fit your workflow."
+        JadeAssistant = App("Jade Assistant", JadeAssistantDescription, "Jade Assistant", "Loading...")
+        MAINFuncs.mainCode()
+
+    JadeAssistant_UpdateThread = threading.Thread(target=JadeAssistant.updateApp)
+    JadeAssistant_DownloadThread = threading.Thread(target=JadeAssistant.downloadApp)
+
+    JadeAssistant_UpdateThread.start()
+    JadeAssistant_DownloadThread.start()
+
+
+
+    app.exec()
+
+elif doMain == False:
+    UTILITYFuncs.logAndPrint("INFO", "Start App: Argument detected. Will not do normal startup.")
+    app.exec()
+
+else:
+    UTILITYFuncs.error("There was a problem checking if we need to do main startup code or not.")
+    UTILITYFuncs.logAndPrint("FATAL", "Start App: There was a problem checking if we need to do main startup code or not.")
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1190</width>
-    <height>732</height>
+    <width>1196</width>
+    <height>744</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -24,7 +24,7 @@
   </property>
   <property name="font">
    <font>
-    <family>Arial</family>
+    <family>Calibri</family>
    </font>
   </property>
   <property name="cursor">
@@ -68,50 +68,6 @@
          <bool>false</bool>
         </property>
         <layout class="QGridLayout" name="gridLayout_6">
-         <item row="11" column="0">
-          <widget class="QLabel" name="label">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>125</width>
-             <height>20</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Quit&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <widget class="QLabel" name="leftBox_appsLogo">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>121</width>
-             <height>31</height>
-            </size>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="pixmap">
-            <pixmap resource="../assets.qrc">:/images/assets/JadeLauncherApps.png</pixmap>
-           </property>
-           <property name="scaledContents">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="0">
           <widget class="QLabel" name="leftBox_logo">
            <property name="sizePolicy">
@@ -137,6 +93,31 @@
            </property>
            <property name="pixmap">
             <pixmap resource="../assets.qrc">:/images/assets/JadeLauncherLogo.png</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="leftBox_appsLogo">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>121</width>
+             <height>31</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="pixmap">
+            <pixmap resource="../assets.qrc">:/images/assets/JadeLauncherApps.png</pixmap>
            </property>
            <property name="scaledContents">
             <bool>true</bool>
@@ -176,60 +157,6 @@
            </property>
           </widget>
          </item>
-         <item row="10" column="0">
-          <widget class="QPushButton" name="leftBox_powerButton">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>130</width>
-             <height>100</height>
-            </size>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset resource="../assets.qrc">
-             <normaloff>:/images/assets/Off.png</normaloff>:/images/assets/Off.png</iconset>
-           </property>
-           <property name="iconSize">
-            <size>
-             <width>16</width>
-             <height>16</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item row="8" column="0">
-          <widget class="QLabel" name="leftBox_line2">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>141</width>
-             <height>16</height>
-            </size>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="pixmap">
-            <pixmap resource="../assets.qrc">:/images/assets/Line.png</pixmap>
-           </property>
-           <property name="scaledContents">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
          <item row="1" column="0">
           <widget class="QPushButton" name="leftBox_jadeAccountButton">
            <property name="font">
@@ -242,23 +169,6 @@
            </property>
            <property name="text">
             <string> Jade Account </string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="0">
-          <widget class="QPushButton" name="leftBox_jadeAssistantButton">
-           <property name="text">
-            <string>Jade Assistant</string>
-           </property>
-           <property name="icon">
-            <iconset resource="../assets.qrc">
-             <normaloff>:/images/assets/jadeIcon.png</normaloff>:/images/assets/jadeIcon.png</iconset>
-           </property>
-           <property name="iconSize">
-            <size>
-             <width>32</width>
-             <height>32</height>
-            </size>
            </property>
           </widget>
          </item>
@@ -277,6 +187,23 @@
             </size>
            </property>
           </spacer>
+         </item>
+         <item row="5" column="0">
+          <widget class="QPushButton" name="leftBox_jadeAssistantButton">
+           <property name="text">
+            <string>Jade Assistant</string>
+           </property>
+           <property name="icon">
+            <iconset resource="../assets.qrc">
+             <normaloff>:/images/assets/jadeIcon.png</normaloff>:/images/assets/jadeIcon.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+          </widget>
          </item>
          <item row="3" column="0">
           <widget class="QLabel" name="leftBox_line1">
@@ -311,6 +238,31 @@
            <property name="icon">
             <iconset resource="../assets.qrc">
              <normaloff>:/images/assets/jadeIcon.png</normaloff>:/images/assets/jadeIcon.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0">
+          <widget class="QLabel" name="leftBox_line2">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>141</width>
+             <height>16</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="pixmap">
+            <pixmap resource="../assets.qrc">:/images/assets/Line.png</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -351,7 +303,7 @@
                 <enum>Qt::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Preferred</enum>
+                <enum>QSizePolicy::Expanding</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -367,7 +319,7 @@
                 <enum>Qt::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Preferred</enum>
+                <enum>QSizePolicy::Expanding</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -404,7 +356,7 @@
                  </property>
                 </widget>
                </item>
-               <item>
+               <item alignment="Qt::AlignTop">
                 <widget class="QLabel" name="welcomeBox_image">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -509,33 +461,6 @@
            <item row="4" column="0">
             <layout class="QHBoxLayout" name="horizontalLayout_2">
              <item>
-              <layout class="QVBoxLayout" name="verticalLayout_5">
-               <item>
-                <spacer name="verticalSpacer">
-                 <property name="orientation">
-                  <enum>Qt::Vertical</enum>
-                 </property>
-                 <property name="sizeType">
-                  <enum>QSizePolicy::Preferred</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>20</width>
-                   <height>80</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item>
-                <widget class="QLabel" name="VERSION">
-                 <property name="text">
-                  <string>TextLabel</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
               <spacer name="horizontalSpacer_5">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -545,7 +470,7 @@
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
-                 <width>200</width>
+                 <width>337</width>
                  <height>20</height>
                 </size>
                </property>
@@ -564,7 +489,7 @@
                 <enum>Qt::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
+                <enum>QSizePolicy::Expanding</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -605,7 +530,7 @@
                 <enum>Qt::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
+                <enum>QSizePolicy::Expanding</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -625,7 +550,7 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>300</width>
+                 <width>160</width>
                  <height>220</height>
                 </size>
                </property>
@@ -764,7 +689,7 @@
                 <enum>Qt::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
+                <enum>QSizePolicy::Expanding</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -784,7 +709,7 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>300</width>
+                 <width>160</width>
                  <height>220</height>
                 </size>
                </property>
@@ -920,7 +845,7 @@
                 <enum>Qt::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
+                <enum>QSizePolicy::Expanding</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -940,7 +865,7 @@
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>300</width>
+                 <width>160</width>
                  <height>220</height>
                 </size>
                </property>
@@ -1076,7 +1001,7 @@
                 <enum>Qt::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
+                <enum>QSizePolicy::Expanding</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -1118,7 +1043,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1190</width>
+     <width>1196</width>
      <height>21</height>
     </rect>
    </property>
@@ -1126,6 +1051,8 @@
     <property name="title">
      <string>&amp;Jade Launcher</string>
     </property>
+    <addaction name="action_About"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit_Jade_Launcher"/>
     <addaction name="actionRestart_Jade_Launcher"/>
    </widget>
@@ -1154,9 +1081,6 @@
    <property name="text">
     <string>Quit Jade Launcher</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+Q</string>
-   </property>
   </action>
   <action name="actionQuit_All">
    <property name="icon">
@@ -1171,11 +1095,21 @@
    <property name="text">
     <string>Restart Jade Launcher</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+R</string>
+  </action>
+  <action name="action_About">
+   <property name="text">
+    <string>About</string>
    </property>
   </action>
  </widget>
+ <tabstops>
+  <tabstop>leftBox_jadeAccountButton</tabstop>
+  <tabstop>leftBox_jadeAssistantButton</tabstop>
+  <tabstop>changelogButton</tabstop>
+  <tabstop>button1</tabstop>
+  <tabstop>button2</tabstop>
+  <tabstop>button3</tabstop>
+ </tabstops>
  <resources>
   <include location="../assets.qrc"/>
  </resources>

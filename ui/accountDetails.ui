@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>372</width>
-    <height>447</height>
+    <height>486</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -274,6 +274,22 @@
        </layout>
       </item>
       <item>
+       <spacer name="verticalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
        <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
          <spacer name="horizontalSpacer_7">
@@ -295,11 +311,14 @@
          <layout class="QGridLayout" name="buttonsBox">
           <item row="0" column="0">
            <widget class="QPushButton" name="buttonsBox_signOut">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>30</height>
+             </size>
+            </property>
             <property name="statusTip">
              <string>Sign out of your Jade Account</string>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0.579545, y2:0.392, stop:0 rgba(24, 0, 246, 255), stop:0.965909 rgba(0, 173, 255, 255));</string>
             </property>
             <property name="text">
              <string>Sign Out</string>
