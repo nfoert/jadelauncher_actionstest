@@ -47,8 +47,8 @@ import assets #The resources for PyQt
 
 Version_MAJOR = 0
 Version_MINOR = 0
-Version_PATCH = 10
-developmental = True #True = for .py & False = for .exe / mac executable
+Version_PATCH = 12 # Actually 12, 10 for test
+developmental = False #True = for .py & False = for .exe / mac executable
 debug = False
 
 Version_TOTAL = f"{Version_MAJOR}.{Version_MINOR}.{Version_PATCH}"
@@ -136,7 +136,7 @@ class Account:
         UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: Reading account file...")
         try:
             try:
-                accountFile = open("account.txt", "r")
+                accountFile = open(f"{TruePath}account.txt", "r")
             
             except FileNotFoundError:
                 UTILITYFuncs.logAndPrint("WARN", "Classes/Account/Authenticate: Account file not found! Will create one.")
@@ -648,6 +648,9 @@ class WebView:
     def back():
         '''Go back a page'''
         window_webView.web.back()
+        url = window_webView.web.url().toString()
+        if url == "about:blank":
+            window_webView.web.back()
         UTILITYFuncs.logAndPrint("INFO", "Classes/WebView/back: Went back a page.")
 
     def forward():
@@ -692,6 +695,14 @@ class WebView:
 
         else:
             UTILITYFuncs.logAndPrint("WARN", "Classes/WebView/openWebView: There was a problem getting connection status.")
+
+    def progress(prog):
+        if prog >= 70:
+            window_webView.show()
+            window_webView.web.show()
+
+        elif prog < 70:
+            window_webView.web.hide()
 
 class App:
     def __init__(self, name, description, path, version):
@@ -786,17 +797,18 @@ class App:
     def launchApp(self):
         UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: Launching {self.name}...")
         global killThreads
+        global TruePath
         try:
             if platform.system() == "Windows":
-                subprocess.Popen(f"{self.path}.exe")
+                subprocess.Popen(f"{TruePath}{self.path}.exe")
                 killThreads = True
-                UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched.")
+                UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (windows)")
                 sys.exit()
                 
             elif platform.system() == "Darwin":
-                subprocess.Popen(f"./{self.path}")
+                subprocess.run(["open", f"{TruePath}{self.path}"])
                 killThreads = True
-                UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched.")
+                UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (mac)")
                 sys.exit()
                 
             else:
@@ -812,6 +824,7 @@ class App:
         global guiLoopList
         global killThreads
         global progress_bar
+        global TruePath
         while killThreads == False:
             if self.downloadAppVar == True:
                 UTILITYFuncs.logAndPrint("INFO", "App/downloadApp: Downloading Jade Assistant...")
@@ -841,41 +854,31 @@ class App:
                     guiLoopList.append('JadeAssistant.openAppMenu()')
                     DownloadAppPath = self.path.replace(" ", "%20")
                     AppDownload = requests.get(f"https://github.com/nfoert/jadeassistant/raw/main/{DownloadAppPath}{end}", stream=True)
-                    total_size_in_bytes= int(AppDownload.headers.get('content-length', 0))
-                    block_size = 1024
-                    count = 0
-                    writeCount = 0
-                    progress_bar = tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True)
+                    total_size_in_bytes = int(AppDownload.headers.get('content-length', 0))
+                    bytes_downloaded = 0
+                    last = 0
                     
-                    with open(f'{self.path}{end}', 'wb') as file:
-                        for data in AppDownload.iter_content(block_size):
-                            progress_bar.update(len(data))
-                            prob = progress_bar.n / total_size_in_bytes
-                            
-                            count = count + 1
-                            if count == 40:
-                                writeCount = writeCount + 1
-                                count = 0
-                                if writeCount == 10:
-                                    number = f"{prob:.2}"
-                                    number = float(number)
-                                    number = number * 100
-                                    number = int(number)
-                                    guiLoopList.append(f'window_appMenu.progressBar.setValue({number})')
-                                    writeCount = 0
-
-                                else:
-                                    continue
-
+                    with open(f'{TruePath}{self.path}{end}', 'wb') as file:
+                        for data in AppDownload.iter_content(1024):
+                            file.write(data)
+                            bytes_downloaded = bytes_downloaded + 1024
+                            percent = bytes_downloaded / total_size_in_bytes
+                            percent = percent * 100
+                            percent = round(percent)
+                            if last != percent:
+                                last = percent
+                                guiLoopList.append(f'window_appMenu.progress_bar.setValue({percent})')
                             else:
                                 continue
 
-                            
-                            file.write(data)
-                    
-                    progress_bar.close()
+
                     file.close()
-                    print(AppDownload.url)
+                            
+                    if platform.system() == "Darwin":
+                        os.system('chmod 775 "Jade Assistant"')
+                    
+                    else:
+                        UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Not Chmodding.")
 
 
                     self.downloadAppVar = False
@@ -931,6 +934,7 @@ class App:
                 guiLoopList.append('window_appMenu.updateButton.setText("Updating...")')
                 guiLoopList.append('window_appMenu.progressBar.show()')
 
+
                 if platform.system() == "Windows":
                     end = ".exe"
 
@@ -948,52 +952,39 @@ class App:
                     guiLoopList.append('window_main.show()')
                     guiLoopList.append('JadeAssistant.openAppMenu()')
                     
-                    os.remove(f"{self.path}{end}")
-                    print(self.path)
+                    os.remove(f"{TruePath}{self.path}{end}")
                     self.path = self.path.replace(" ", "%20")
                     AppDownload = requests.get(f"https://github.com/nfoert/jadeassistant/raw/main/{self.path}{end}", stream=True)
                     total_size_in_bytes = int(AppDownload.headers.get('content-length', 0))
-                    block_size = 1024
-                    count = 0
-                    writeCount = 0
-                    progress_bar = tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True)
+                    bytes_downloaded = 0
+                    last = 0
+
                     self.path = self.path.replace("%20", " ")
                     
-                    with open(f'{self.path}{end}', 'wb') as file:
-                        for data in AppDownload.iter_content(block_size):
-                            progress_bar.update(len(data))
-                            prob = progress_bar.n / total_size_in_bytes
+                    with open(f'{TruePath}{self.path}{end}', 'wb') as file:
+                        for data in AppDownload.iter_content(1024):
                             file.write(data)
-                            count = count + 1
-                            if count == 40:
-                                writeCount = writeCount + 1
-                                count = 0
-                                if writeCount == 10:
-                                    number = f"{prob:.2}"
-                                    number = float(number)
-                                    number = number * 100
-                                    number = int(number)
-                                    guiLoopList.append(f'window_appMenu.progressBar.setValue({number})')
-                                    writeCount = 0
-
-                                else:
-                                    continue
-
+                            bytes_downloaded = bytes_downloaded + 1024
+                            percent = bytes_downloaded / total_size_in_bytes
+                            percent = percent * 100
+                            percent = round(percent)
+                            if last != percent:
+                                last = percent
+                                guiLoopList.append(f'window_appMenu.progressBar.setValue({percent})')
                             else:
                                 continue
                         
                         AppDownload.close()
-                        progress_bar.close()
                         file.close()
 
-                    if platform.system() == "Windows":
-                        print("hi")
+                        if platform.system() == "Darwin":
 
-                    elif platform.system() == "Darwin":
-                        os.system(f"chmod 755 '{self.path}'")
+                            os.system('chmod 775 "Jade Assistant"')
 
-                    else:
-                        UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac!")
+                        else:
+                            UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Not Chmodding.")
+
+        
 
 
                     self.updateAppVar = False
@@ -1076,8 +1067,8 @@ class App:
         global TruePath
 
         UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Checking if Jade Assistant exists or needs an update.")
-        AppWindows = Path(f"{self.path}.exe").exists()
-        AppMac = Path(f"{self.path}").exists()
+        AppWindows = Path(f"{TruePath}{self.path}.exe").exists()
+        AppMac = Path(f"{TruePath}{self.path}").exists()
 
         try:
             AppVersionFromServer = requests.get("https://nfoert.pythonanywhere.com/jadeAssistant/jadeAssistantVersion")
@@ -1356,11 +1347,12 @@ class MAINFuncs:
 
         def show_message(text):
             if platform.system() == "Windows":
-                window_splash.showMessage(text, alignment=QtCore.Qt.AlignCenter | QtCore.Qt.AlignBottom, color=QtGui.QColor("white"))
+                window_splash.show()
+                window_splash.showMessage(text, alignment=QtCore.Qt.AlignCenter | QtCore.Qt.AlignBottom)
 
             elif platform.system() == "Darwin":
-                print("Not showing splash screen message since splash screen does not work on mac.")
-                return False
+                window_splash.show()
+                window_splash.showMessage(text, alignment=132 | 64)
 
             else:
                 print("Your OS isn't supported! Please use Windows or Mac.")
@@ -1368,28 +1360,49 @@ class MAINFuncs:
         
         # Thanks to Liam on StackOverflow
         # https://stackoverflow.com/questions/58661539/create-splash-screen-in-pyqt5
-        if developmental == False:
-            splash_pix = QtGui.QPixmap(str(resource_path("JadeLauncherSplash.png")))
+        if platform.system() == "Windows":
+            if developmental == False:
+                splash_pix = QtGui.QPixmap(str(resource_path("JadeLauncherSplash.png")))
 
-        elif developmental == True:
-            splash_pix = QtGui.QPixmap(str(PurePath("assets/JadeLauncherSplash.png")))
+            elif developmental == True:
+                splash_pix = QtGui.QPixmap(str(PurePath("assets/JadeLauncherSplash.png")))
 
-        window_splash = QtWidgets.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+            window_splash = QtWidgets.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
 
-        screenSize = screen.size()
-        moveHeight = screenSize.height() - 290
-        window_splash.move(10, moveHeight)
+            screenSize = screen.size()
+            moveHeight = screenSize.height() - 310
+            window_splash.move(30, moveHeight)
 
-        window_splash.setFont(QFont("Calibri", 14))
-        show_message("Loading...")
-        opaqueness = 0.0
-        step = 0.03
-        window_splash.setWindowOpacity(opaqueness)
-        window_splash.show()
-        while opaqueness < 1:
+            window_splash.setFont(QFont("Calibri", 18))
+            show_message("Loading...")
+            opaqueness = 0.0
+            step = 0.03
             window_splash.setWindowOpacity(opaqueness)
-            sleep(step)
-            opaqueness+=step
+            window_splash.show()
+            while opaqueness < 1:
+                window_splash.setWindowOpacity(opaqueness)
+                sleep(step)
+                opaqueness += step
+
+        elif platform.system() == "Darwin":
+            if developmental == False:
+                splash_pix = QtGui.QPixmap(str(resource_path("JadeLauncherSplash.png")))
+
+            elif developmental == True:
+                splash_pix = QtGui.QPixmap(str(PurePath("assets/JadeLauncherSplash.png")))
+
+            window_splash = QtWidgets.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+
+            screenSize = screen.size()
+            moveHeight = screenSize.height() - 290
+            window_splash.move(30, moveHeight)
+            window_splash.setFont(QFont("Calibri", 24))
+            window_splash.show()            
+            show_message("Loading...")
+
+        else:
+            UTILITYFuncs.error("Your OS Isn't supported! Please use Windows or Mac.")
+
 
 
         # Check for updates
@@ -1442,104 +1455,66 @@ class MAINFuncs:
                     return(False)
                 
                 if update == "yes":
-                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Now updating... First going to remove the updater - if it exists")
-                    try:
-                        if platform.system() == "Windows":
-                            os.remove("Jade Launcher Updater.exe")
+                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Now updating...")
 
-                        elif platform.system() == "Darwin":
-                            os.remove("Jade Launcher Updater")
+                    show_message("Downloading update file...")
 
-                        else:
-                            print("Your OS isn't supported.")
-                            UTILITYFuncs.error("Hey there! Your OS isn't supported. Please install the Launcher for Windows or Mac from my website, 'https://nofoert.wixsite.com/jade/download'")
+                    if platform.system() == "Windows":
+                        OS = "Windows"
+                        path = f"{TruePath}Jade Launcher.exe.download"
 
-                    except OSError as e:
-                        UTILITYFuncs.logAndPrint("INFO", f"MAINFuncs/mainCode/checkForUpdates: The updater dosen't seem to exist. {e}")
+                    elif platform.system() == "Darwin":
+                        OS = "Mac"
+                        path = f"{TruePath}Jade Launcher.download"
 
-                    except Exception as e:
-                        UTILITYFuncs.logAndPrint("WARN", "MAINFuncs/mainCode/checkForUpdates: There was a problem removing the Updater.")
+                    else:
+                        UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
+
+
+                    LauncherDownload = requests.get(f"https://nfoert.pythonanywhere.com/jadeLauncher/download?{OS}&", stream=True)
+                    total_size_in_bytes = int(LauncherDownload.headers.get('content-length', 0))
+                    bytes_downloaded = 0
+                    last = 0
                         
-                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Now going to download and run the installer.")
-                    try:
-                        if platform.system() == "Windows":
-                            UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Going to update for windows.")
-                            try:
-                                jadeLauncherUpdaterRequest = requests.get("https://github.com/nfoert/jadelauncher/raw/main/Jade%20Launcher%20Updater.exe")
-                                jadeLauncherUpdaterRequest.raise_for_status()
-                                UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Saving...")
-                                jadeLauncherUpdater = open(f"{TruePath}Jade Launcher Updater.exe", "wb")
-                                for chunk in jadeLauncherUpdaterRequest.iter_content(100000):
-                                    jadeLauncherUpdater.write(chunk)
+                    with open(f'{path}', 'wb') as file:
 
-                                jadeLauncherUpdater.close()
-
-                                UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Done. Now opening.")
-                                try:
-                                    subprocess.Popen("Jade Launcher Updater.exe")
-                                    sys.exit()
-
-                                except Exception as e:
-                                    UTILITYFuncs.logAndPrint("FATAL", f"MAINFuncs/mainCode/checkForUpdates: There was a problem starting the updater. {e}")
-                                    UTILITYFuncs.error(f"There was a problem starting the updater. This may be nothing. Please restart. {e}")
+                        for data in LauncherDownload.iter_content(1024):
+                            file.write(data)
+                            bytes_downloaded = bytes_downloaded + 1024
+                            percent = bytes_downloaded / total_size_in_bytes
+                            percent = percent * 100
+                            percent = round(percent)
+                            if last != percent:
+                                last = percent
+                                show_message(f"Downloading update... [{percent}%]")
+                            else:
+                                continue
 
 
-                            except Exception as e:
-                                UTILITYFuncs.logAndPrint("WARN", f"MAINFuncs/mainCode/checkForUpdates: There was a problem installing the updater for windows. {e}")
+                    LauncherDownload.close()
+                    file.close()
 
-                        elif platform.system() == "Darwin":
-                            UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Going to update for Mac.")
-                            try:
-                                jadeLauncherUpdaterRequest = requests.get("https://github.com/nfoert/jadelauncher/raw/main/Jade%20Launcher%20Updater")
-                                jadeLauncherUpdaterRequest.raise_for_status()
-                                UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Saving...")
-                                jadeLauncherUpdater = open(f"{TruePath}Jade Launcher Updater", "wb")
-                                for chunk in jadeLauncherUpdaterRequest.iter_content(100000):
-                                    jadeLauncherUpdater.write(chunk)
 
-                                UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Done. Now opening.")
-                                try:
-                                    subprocess.Popen("Jade Launcher Updater")
-                                    sys.exit()
 
-                                except Exception as e:
-                                    UTILITYFuncs.logAndPrint("WARN", f"MAINFuncs/mainCode/checkForUpdates: There was a problem starting the updater. {e}")
-                                    UTILITYFuncs.error(f"There was a problem starting the updater. This may be nothing. Please restart. {e}")
+                    if platform.system() == "Windows":
+                        window_splash.hide()
+                        app.quit()
+                        subprocess.call(["updateWindows.bat", f"{TruePath}"])
+                        sys.exit()
 
-                            except Exception as e:
-                                print(f"There was a problem installing the updater for windows. {e}")
-                                UTILITYFuncs.log("WARN", f"There was a problem installing the updater for windows. {e}")
 
-                        else:
-                            UTILITYFuncs.logAndPrint("FATAL", "MAINFuncs/mainCode/checkForUpdates: Your OS is not supported.")
-                            UTILITYFuncs.error("Your OS isn't supported. Please use Windows or Mac.")
+                    elif platform.system() == "Darwin":
+                        window_splash.hide()
+                        app.quit()
+                        subprocess.run(["sh", f"{TruePath}updateMac.sh", f"{TruePath}"])
+                        sys.exit()
 
-                    except Exception as e:
-                        UTILITYFuncs.logAndPrint("WARN", f"MAINFuncs/mainCode/checkForUpdates: There was a problem when updating. {e}")
-                        UTILITYFuncs.error(f"There was a problem when updating. {e}")
-
+                    else:
+                        UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
 
                 
                 elif update == "no":
                     UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Not updating. Going to try to remove the updater - just in case it exists.")
-                    try:
-                        if platform.system() == "Windows":
-                            os.remove("jadeLauncherUpdater.exe")
-
-                        elif platform.system() == "Darwin":
-                            os.remove("jadeLauncherUpdater")
-
-                        else:
-                            UTILITYFuncs.logAndPrint("FATAL", "MAINFuncs/mainCode/checkForUpdates: Your OS isn't supported.")
-                            UTILITYFuncs.error("Your OS isn't supported. Please use Windows or Mac.")
-
-                    except OSError as e:
-                        UTILITYFuncs.logAndPrint("FATAL", f"MAINFuncs/mainCode/checkForUpdates: The updater dosen't seem to exist. {e}")
-
-                    except Exception as e:
-                        UTILITYFuncs.logAndPrint("FATAL", f"MAINFuncs/mainCode/checkForUpdates: There was a problem removing the Updater. {e}")
-                        UTILITYFuncs.error("There was a problem removing the updater. This will cause problems when updating in the future. Please restart.")
-
 
                 else:
                     UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Not updating. Couldn't figure out if we're supposed to or not, so let's say no.")
@@ -1600,10 +1575,9 @@ class MAINFuncs:
                     newsCodeRequest.raise_for_status
 
                 except Exception as e:
-                    UTILITYFuncs.logAndPrint("WARN", f"THREADFuncs/mainCode/fetchNews: There was a problem fetching news. AT: Get news codes {e}")
-                    window_main.newsBox1.hide()
-                    window_main.newsBox2.hide()
-                    window_main.newsBox3.hide()
+                    UTILITYFuncs.logAndPrint("FATAL", f"THREADFuncs/mainCode/fetchNews: There was a problem fetching news. AT: Get news codes {e}")
+                    UTILITYFuncs.error(f"There was a problem fetching news. AT: Get news codes {e}")
+                    return False
 
                 ncrText = newsCodeRequest.text
                 try:
@@ -1625,10 +1599,9 @@ class MAINFuncs:
                     UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/fetchNews: Done.")
 
                 except Exception as e:
-                    UTILITYFuncs.logAndPrint("WARN", f"THREADFuncs/mainCode/fetchNews: There was a problem getting the news requests. {e}")
-                    window_main.newsBox1.hide()
-                    window_main.newsBox2.hide()
-                    window_main.newsBox3.hide()
+                    UTILITYFuncs.logAndPrint("FATAL", f"THREADFuncs/mainCode/fetchNews: There was a problem getting the news requests. {e}")
+                    UTILITYFuncs.error(f"There was a problem getting the news requests. {e}")
+                    return False
 
                 if newsRequest1.ok == True:
                     pass
@@ -2299,6 +2272,7 @@ window_webView.forward.clicked.connect(WEBVIEW.forward)
 window_webView.reload.clicked.connect(WEBVIEW.reload)
 window_webView.web.loadFinished.connect(WEBVIEW.doneLoading)
 window_webView.web.loadStarted.connect(WEBVIEW.startLoading)
+window_webView.web.loadProgress.connect(WEBVIEW.progress)
 
 # Jade Assistant menu
 window_appMenu.launchButton.clicked.connect(UIFuncs.launchApp)
