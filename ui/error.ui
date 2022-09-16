@@ -30,6 +30,12 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>100</height>
+          </size>
+         </property>
          <property name="maximumSize">
           <size>
            <width>150</width>
@@ -69,7 +75,7 @@
             </font>
            </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-style:italic;&quot;&gt;When running some code, an error occured. The execption is shown below. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;- One potental problem may be your connection. The first step is to check your internet, then try again.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-style:italic;&quot;&gt;When running some code, an error occured. The execption is shown below.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;- One potental problem may be your connection. The first step is to check your internet, then try again.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="wordWrap">
             <bool>true</bool>

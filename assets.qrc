@@ -1,0 +1,25 @@
+<RCC>
+  <qresource prefix="images">
+    <file>assets/download.png</file>
+    <file>assets/settings.png</file>
+    <file>assets/notifications.png</file>
+    <file>assets/background.png</file>
+    <file>assets/VerticalLine.png</file>
+    <file>assets/JadePlus.png</file>
+    <file>assets/JadeAccount.png</file>
+    <file>assets/jadeAssistant.png</file>
+    <file>assets/JadeBar.png</file>
+    <file>assets/jadeIcon.png</file>
+    <file>assets/JadeLauncherApps.png</file>
+    <file>assets/JadeLauncherLogo.png</file>
+    <file>assets/JadeLauncherSplash.png</file>
+    <file>assets/JadeLogo.png</file>
+    <file>assets/JadeNews.png</file>
+    <file>assets/jadeStore.png</file>
+    <file>assets/lightJadeLogo.png</file>
+    <file>assets/Line.png</file>
+    <file>assets/More.png</file>
+    <file>assets/Off.png</file>
+    <file>assets/plus.png</file>
+  </qresource>
+</RCC>

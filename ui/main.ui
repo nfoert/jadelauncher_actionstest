@@ -150,7 +150,7 @@
             </font>
            </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; color:#ff0307;&quot;&gt;Not signed In&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt; color:#ff0307;&quot;&gt;Not signed In&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="wordWrap">
             <bool>true</bool>
@@ -190,6 +190,9 @@
          </item>
          <item row="5" column="0">
           <widget class="QPushButton" name="leftBox_jadeAssistantButton">
+           <property name="styleSheet">
+            <string notr="true">font: 10pt &quot;Calibri&quot;;</string>
+           </property>
            <property name="text">
             <string>Jade Assistant</string>
            </property>

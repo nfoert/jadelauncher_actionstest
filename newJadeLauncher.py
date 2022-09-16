@@ -12,7 +12,7 @@ Jade Software was built by a teenager over nearly a year and a half.
 
 
 # ----------
-# Imports
+# Imports aren't cool THEY"RE VERY COOL THEY LET YOU USE OtHer THIRD PARTY MODULES 
 # ----------
 
 # Python Standard Library Imports
@@ -33,10 +33,16 @@ import sys
 from PyQt5 import QtWidgets, uic, QtCore, QtGui
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QUrl, QTimer
-from PyQt5.QtWebEngineWidgets import *
+
 import requests
 import pwnedpasswords
 from tqdm import tqdm
+
+if platform.system() == "Windows":
+    from PyQt5.QtWebEngineWidgets import *
+
+else:
+    print("Not importing QtWebEngine because it's not required for mac OS")
 
 # Local Imports
 import assets #The resources for PyQt
@@ -45,11 +51,12 @@ import assets #The resources for PyQt
 # Set up variables
 # ----------
 
-Version_MAJOR = 0
+Version_MAJOR = 1
 Version_MINOR = 0
-Version_PATCH = 12 # Actually 12, 10 for test
+Version_PATCH = 0 # Actually 12, 10 for test
 developmental = False #True = for .py & False = for .exe / mac executable
 debug = False
+debugOpenAllWindows = False
 
 Version_TOTAL = f"{Version_MAJOR}.{Version_MINOR}.{Version_PATCH}"
 SignedIn = False
@@ -69,6 +76,7 @@ progress_bar = ""
 
 TruePath = ""
 
+update = ""
 
 # ----------
 # Set up the resource manager
@@ -101,6 +109,7 @@ if developmental == False:
 
     elif platform.system() == "Darwin":
         TruePath = TruePath + "/"
+        TruePath = TruePath.replace("Jade Launcher.app/Contents/MacOS/", "")
 
 elif developmental == True:
     TruePath = ""
@@ -203,7 +212,7 @@ class Account:
                     window_accountDetails.emailBox_email.setFont(QFont("Calibri", 12))
 
                     window_main.leftBox_accountLabel.setText(f"Hello, {USERNAME}")
-                    window_main.leftBox_accountLabel.setFont(QFont("Calibri Bold", 9))
+                    window_main.leftBox_accountLabel.setFont(QFont("Calibri Bold", 10))
                     window_main.leftBox_accountLabel.setAlignment(QtCore.Qt.AlignCenter)
                     window_main.leftBox_accountLabel.setStyleSheet("color: green")
 
@@ -337,9 +346,9 @@ class Account:
 
                 except:
                     passwordCheck = 0
-                
-                if passwordCheck == 0:
                     
+                if passwordCheck == 0:
+                        
                     try:
                         window_createAccount.mainBox_button.setText("Creating Account...")
                         createAccountRequest = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/create?user={usernameInput},password={passwordInput},email={emailInput},name={nameInput}&")
@@ -355,12 +364,17 @@ class Account:
                             self.writeAccountFile(usernameInput, passwordInput)
                             self.Authenticate()
 
+                            window_createAccount.usernameBox_edit.clear()
+                            window_createAccount.passwordBox_edit.clear()
+                            window_createAccount.nameBox_edit.clear()
+                            window_createAccount.emailBox_edit.clear()
+
                             window_createAccount.hide()
                             window_accountDetails.show()
 
                         elif createAccountRequest.text == "That account already exists.":
                             UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: That account already exists!")
-                            UTILITYFuncs.notification("That account already exists!", "Maybe you already created an Account, but you forgot?")
+                            UTILITYFuncs.notification("That account already exists!", "That username matches another username in our database. Maybe you created an account, then forgot it existed?")
                             window_createAccount.mainBox_button.setEnabled(True)
                             window_createAccount.mainBox_button.setText("Create Account")
 
@@ -375,7 +389,7 @@ class Account:
                         UTILITYFuncs.notification("There was a problem creating an Account.", "We couldn't create your account.")
                         window_createAccount.mainBox_button.setEnabled(True)
                         window_createAccount.mainBox_button.setText("Create Account")
-
+                    
                 elif passwordCheck >= 1:
                     UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/createAccount: Password is not safe! Has been leaked {passwordCheck} times.")
                     UTILITYFuncs.notification("That password is not safe!", f"That password has been leaked {passwordCheck} times.")
@@ -386,7 +400,9 @@ class Account:
                     UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: There was a problem checking password safety.")
                     UTILITYFuncs.notification("There was a problem checking password safety.", "We were not able to confirm that your password is safe.")
                     window_createAccount.mainBox_button.setEnabled(True)
-                    window_createAccount.mainBox_button.setText("Create Account")
+                    window_createAccount.mainBox_button.setText("Create Account")    
+
+
             else:
                 UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: Please select a password with more than 8 characters.")
                 UTILITYFuncs.notification("Password is too short!", "Please make sure your password has eight or more characters.")
@@ -438,6 +454,8 @@ class Account:
                         window_changePassword.button.setText("Change Password")
 
                         myAccount.writeAccountFile(self.username, newPassword)
+
+                        window_accountDetails.show()
 
                     elif changePasswordRequest.text == "There was a problem getting Verification Code data.":
                         window_changePassword.passwordBox_edit.clear()
@@ -520,7 +538,14 @@ class News:
             window_expandedNews.show()
 
         else:
-            WEBVIEW.openWebView(self.url)
+            if platform.system() == "Windows":
+                WEBVIEW.openWebView(self.url)
+
+            elif platform.system() == "Darwin":
+                webbrowser.open(self.url)
+
+            else:
+                UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
 
         
         
@@ -621,7 +646,7 @@ class LauncherId:
             if updateStatusRequest.text == "DONE":
                 UTILITYFuncs.logAndPrint("INFO", "Classes/LauncherId/updateStatus: Done.")
                 dialog_about.id.setText(self.id)
-                dialog_about.id.setFont(QFont("Calibri", 10))
+                dialog_about.id.setFont(QFont("Calibri", 11))
 
             else:
                 UTILITYFuncs.logAndPrint("INFO", f"Classes/LauncherId/updateStatus: There was a problem updating Launcher Id. {updateStatusRequest.text}, {self.id}")
@@ -720,7 +745,7 @@ class App:
         UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: Opening app menu for {self.name}...")
         selectedApp = self.name
         window_appMenu.description.setText(self.description)
-        window_appMenu.description.setFont(QFont("Calibri", 8))
+        window_appMenu.description.setFont(QFont("Calibri", 11))
         window_appMenu.description.setAlignment(QtCore.Qt.AlignCenter)
 
         if self.state == "ready":
@@ -730,7 +755,7 @@ class App:
             window_appMenu.updateButton.hide()
             window_appMenu.removeButton.show()
             window_appMenu.version.setText(f"Version {self.version}")
-            window_appMenu.version.setFont(QFont("Calibri", 8))
+            window_appMenu.version.setFont(QFont("Calibri", 11))
             window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
         
 
@@ -741,7 +766,7 @@ class App:
             window_appMenu.updateButton.hide()
             window_appMenu.removeButton.hide()
             window_appMenu.version.setText(f"Download version {self.newVersion}")
-            window_appMenu.version.setFont(QFont("Calibri", 8))
+            window_appMenu.version.setFont(QFont("Calibri", 11))
             window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
 
         elif self.state == "downloading":
@@ -751,7 +776,7 @@ class App:
             window_appMenu.updateButton.hide()
             window_appMenu.removeButton.hide()
             window_appMenu.version.setText(f"Downloading version {self.newVersion}...")
-            window_appMenu.version.setFont(QFont("Calibri", 8))
+            window_appMenu.version.setFont(QFont("Calibri", 11))
             window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
         
 
@@ -762,7 +787,7 @@ class App:
             window_appMenu.updateButton.show()
             window_appMenu.removeButton.show()
             window_appMenu.version.setText(f"Update to version {self.newVersion}")
-            window_appMenu.version.setFont(QFont("Calibri", 8))
+            window_appMenu.version.setFont(QFont("Calibri", 11))
             window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
 
         elif self.state == "updating":
@@ -772,7 +797,7 @@ class App:
             window_appMenu.updateButton.show()
             window_appMenu.removeButton.hide()
             window_appMenu.version.setText(f"Updating to version {self.newVersion}...")
-            window_appMenu.version.setFont(QFont("Calibri", 8))
+            window_appMenu.version.setFont(QFont("Calibri", 11))
             window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
         
             
@@ -783,7 +808,7 @@ class App:
             window_appMenu.updateButton.hide()
             window_appMenu.removeButton.show()
             window_appMenu.version.setText("You're offline!")
-            window_appMenu.version.setFont(QFont("Calibri", 8))
+            window_appMenu.version.setFont(QFont("Calibri", 11))
             window_appMenu.version.setAlignment(QtCore.Qt.AlignCenter)
         
 
@@ -867,7 +892,7 @@ class App:
                             percent = round(percent)
                             if last != percent:
                                 last = percent
-                                guiLoopList.append(f'window_appMenu.progress_bar.setValue({percent})')
+                                guiLoopList.append(f'window_appMenu.progressBar.setValue({percent})')
                             else:
                                 continue
 
@@ -875,7 +900,8 @@ class App:
                     file.close()
                             
                     if platform.system() == "Darwin":
-                        os.system('chmod 775 "Jade Assistant"')
+                        print("CHMOD!!!")
+                        os.system(f'chmod 775 "{TruePath}Jade Assistant"')
                     
                     else:
                         UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Not Chmodding.")
@@ -884,6 +910,8 @@ class App:
                     self.downloadAppVar = False
                     guiLoopList.append('window_appMenu.launchButton.show()')
                     guiLoopList.append('window_appMenu.updateButton.hide()')
+                    guiLoopList.append('window_appMenu.downloadButton.setEnabled(True)')
+                    guiLoopList.append('window_appMenu.downloadButton.setText("Download")')
                     guiLoopList.append('window_appMenu.downloadButton.hide()')
                     guiLoopList.append('window_appMenu.removeButton.show()')
                     guiLoopList.append('window_appMenu.progressBar.hide()')
@@ -894,6 +922,16 @@ class App:
                     guiLoopList.append('JadeAssistant.openAppMenu()')
                     UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Done downloading {self.name}.")
                     guiLoopList.append(f'UTILITYFuncs.notification("{self.name} was downloaded.", "{self.name} is done downloading.")')
+                    versionFileName = self.path
+                    versionFileName = versionFileName.replace(" ", "")
+                    appVersionFile = open(f"{TruePath}{versionFileName}Version.txt", "w")
+                    self.version = self.newVersion
+                    print(appVersionFile.name)
+                    print(versionFileName)
+                    file = open("file.txt", "w")
+                    self.newVersion = self.newVersion.replace(".", "\n")
+                    appVersionFile.write(self.newVersion)
+                    appVersionFile.close()
 
                 except Exception as e:
                     UTILITYFuncs.logAndPrint("WARN", f"App/downloadApp: There was a problem downloading {self.name}! {e}")
@@ -1004,6 +1042,7 @@ class App:
                     appVersionFile = open(f"{TruePath}{versionFileName}Version.txt", "w")
                     print(appVersionFile.name)
                     print(versionFileName)
+                    self.version = self.newVersion
                     file = open("file.txt", "w")
                     self.newVersion = self.newVersion.replace(".", "\n")
                     appVersionFile.write(self.newVersion)
@@ -1258,6 +1297,9 @@ class UTILITYFuncs:
         killThreads = True
         window_main.hide()
         window_appMenu.hide()
+        window_createAccount.hide()
+        window_signIn.hide()
+        window_accountDetails.hide()
         dialog_error.ERROR.setText(Error)
         dialog_error.ERROR.setFont(QFont("Calibri", 14))
         dialog_error.show()
@@ -1280,11 +1322,11 @@ class UTILITYFuncs:
             window_notification.move(10, 10)
 
             window_notification.header.setText(header)
-            window_notification.header.setFont(QFont("Calibri Bold", 12))
+            window_notification.header.setFont(QFont("Calibri Bold", 14))
             window_notification.header.setAlignment(QtCore.Qt.AlignLeft)
 
             window_notification.body.setText(text)
-            window_notification.body.setFont(QFont("Calibri", 9))
+            window_notification.body.setFont(QFont("Calibri", 12))
             window_notification.body.setAlignment(QtCore.Qt.AlignLeft)
 
         else:
@@ -1296,7 +1338,7 @@ class UTILITYFuncs:
             window_notification.header.setAlignment(QtCore.Qt.AlignLeft)
 
             window_notification.body.setText(text)
-            window_notification.body.setFont(QFont("Calibri", 9))
+            window_notification.body.setFont(QFont("Calibri", 10))
             window_notification.body.setAlignment(QtCore.Qt.AlignLeft)
 
     def logAndPrint(tag, text):
@@ -1338,6 +1380,8 @@ class MAINFuncs:
 
         global TruePath
 
+        global update
+
         # That's a lot of global variables :)
 
         from timeit import default_timer as runDuration
@@ -1346,6 +1390,7 @@ class MAINFuncs:
         UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode: Main code thread started!")
 
         def show_message(text):
+            text = text + "\n"
             if platform.system() == "Windows":
                 window_splash.show()
                 window_splash.showMessage(text, alignment=QtCore.Qt.AlignCenter | QtCore.Qt.AlignBottom)
@@ -1455,73 +1500,79 @@ class MAINFuncs:
                     return(False)
                 
                 if update == "yes":
-                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Now updating...")
+                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: An update is avaliable.")
+                
+                # Automatic updates was removed in 0.0.12, will be re added in 2.0.0 most likely
 
-                    show_message("Downloading update file...")
+                #     show_message("Downloading update file...")
 
-                    if platform.system() == "Windows":
-                        OS = "Windows"
-                        path = f"{TruePath}Jade Launcher.exe.download"
+                #     if platform.system() == "Windows":
+                #         OS = "Windows"
+                #         path = f"{TruePath}Jade Launcher.exe.download"
 
-                    elif platform.system() == "Darwin":
-                        OS = "Mac"
-                        path = f"{TruePath}Jade Launcher.download"
+                #     elif platform.system() == "Darwin":
+                #         OS = "Mac"
+                #         path = f"{TruePath}Jade Launcher.download.app"
 
-                    else:
-                        UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
+                #     else:
+                #         UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
 
 
-                    LauncherDownload = requests.get(f"https://nfoert.pythonanywhere.com/jadeLauncher/download?{OS}&", stream=True)
-                    total_size_in_bytes = int(LauncherDownload.headers.get('content-length', 0))
-                    bytes_downloaded = 0
-                    last = 0
+                #     LauncherDownload = requests.get(f"https://nfoert.pythonanywhere.com/jadeLauncher/download?{OS}&", stream=True)
+                #     total_size_in_bytes = int(LauncherDownload.headers.get('content-length', 0))
+                #     bytes_downloaded = 0
+                #     last = 0
                         
-                    with open(f'{path}', 'wb') as file:
+                #     with open(f'{path}', 'wb') as file:
 
-                        for data in LauncherDownload.iter_content(1024):
-                            file.write(data)
-                            bytes_downloaded = bytes_downloaded + 1024
-                            percent = bytes_downloaded / total_size_in_bytes
-                            percent = percent * 100
-                            percent = round(percent)
-                            if last != percent:
-                                last = percent
-                                show_message(f"Downloading update... [{percent}%]")
-                            else:
-                                continue
-
-
-                    LauncherDownload.close()
-                    file.close()
+                #         for data in LauncherDownload.iter_content(1024):
+                #             file.write(data)
+                #             bytes_downloaded = bytes_downloaded + 1024
+                #             percent = bytes_downloaded / total_size_in_bytes
+                #             percent = percent * 100
+                #             percent = round(percent)
+                #             if last != percent:
+                #                 last = percent
+                #                 show_message(f"Downloading update... [{percent}%]")
+                #             else:
+                #                 continue
 
 
-
-                    if platform.system() == "Windows":
-                        window_splash.hide()
-                        app.quit()
-                        subprocess.call(["updateWindows.bat", f"{TruePath}"])
-                        sys.exit()
+                #     LauncherDownload.close()
+                #     file.close()
 
 
-                    elif platform.system() == "Darwin":
-                        window_splash.hide()
-                        app.quit()
-                        subprocess.run(["sh", f"{TruePath}updateMac.sh", f"{TruePath}"])
-                        sys.exit()
 
-                    else:
-                        UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
+                #     if platform.system() == "Windows":
+                #         window_splash.hide()
+                #         app.quit()
+                #         subprocess.call(["updateWindows.bat", f"{TruePath}"])
+                #         sys.exit()
+
+
+                #     elif platform.system() == "Darwin":
+                #         window_splash.hide()
+                #         app.quit()
+                #         subprocess.run(["sh", f"{TruePath}updateMac.sh", f"{TruePath}"])
+                #         sys.exit()
+
+                #     else:
+                #         UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
 
                 
-                elif update == "no":
-                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Not updating. Going to try to remove the updater - just in case it exists.")
+                # elif update == "no":
+                #     UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Not updating. Going to try to remove the updater - just in case it exists.")
 
-                else:
-                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Not updating. Couldn't figure out if we're supposed to or not, so let's say no.")
+                # else:
+                #     UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Not updating. Couldn't figure out if we're supposed to or not, so let's say no.")
+
+                elif update == "no":
+                    UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: No update is avaliable.")
 
 
             elif gc == False:
                 UTILITYFuncs.logAndPrint("NOT CONNECTED", "MAINFuncs/mainCode/checkForUpdates: You're not connected! Skipping checking for updates.")
+                update = False
                 window_main.show()
                 window_main.newsBox1.hide()
                 window_main.newsBox2.hide()
@@ -1807,15 +1858,6 @@ class MAINFuncs:
         Launcher.username = myAccount.username
         Launcher.updateStatus()
 
-        # Check for suspension
-        if myAccount.suspended == "no":
-            UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/suspensionCheck: Not suspended.")
-
-        else:
-            UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/suspensionCheck: Suspended.")
-            window_splash.hide()
-            dialog_accountSuspended.show()
-
         # Set greeting
         UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/setGreeting: Setting greeting...")
         show_message("Setting greeting message...")
@@ -1852,11 +1894,21 @@ class MAINFuncs:
         show_message("Loading Jade Assistant...")
         JadeAssistant.checkForUpdates()
 
+        # Check for suspension
+        if myAccount.suspended == "no":
+            UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/suspensionCheck: Not suspended.")
+            show_message("Done!")
+            sleep(1.5)
+            window_main.show()
+            window_main.show()
+
+        else:
+            UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/suspensionCheck: Suspended.")
+            window_splash.hide()
+            dialog_accountSuspended.show()
+
         elapsedTime = runDuration() - startElapsedTime
         elapsedTime = round(elapsedTime)
-        show_message("Done!")
-        sleep(1.5)
-        window_main.show()
 
         UTILITYFuncs.logAndPrint("INFO", f"THREADFuncs/mainCode: Finished! Took {elapsedTime} seconds.")
 
@@ -2014,7 +2066,14 @@ class UIFuncs:
         news3.expand()
 
     def openChangelog():
-        WEBVIEW.openWebView("https://nofoert.wixsite.com/jade/blog/categories/changelogs")
+        if platform.system() == "Windows":
+            WEBVIEW.openWebView("https://nofoert.wixsite.com/jade/blog/categories/changelogs")
+
+        elif platform.system() == "Darwin":
+            webbrowser.open("https://nofoert.wixsite.com/jade/blog/categories/changelogs")
+
+        else:
+            UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
 
     #Expanded news
     def openUrlButton():
@@ -2082,6 +2141,7 @@ class UIFuncs:
             UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
 
     def openChangePassword():
+        window_accountDetails.hide()
         global myAccount
         try:
             createVerificationCode = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/createVerificationCode?username={myAccount.username},password={myAccount.password}&")
@@ -2131,6 +2191,35 @@ class UIFuncs:
 
         else:
             return False
+
+    def openUpdatePage():
+        # TODO:
+        webbrowser.open("https://nofoert.wixsite.com/jade/download")
+
+    def notNowUpdate():
+        window_update.hide()
+
+    def debugOpenAllWindows():
+        global debugOpenAllWindows
+        if debugOpenAllWindows == True:
+            UTILITYFuncs.logAndPrint("DEBUG", "Opening all windows! (Much chaos ahead, beware!)")
+            window_accountDetails.show()
+            window_offline.show()
+            window_appMenu.show()
+            window_changePassword.show()
+            window_createAccount.show()
+            window_changePassword.show()
+            window_main.show()
+            window_signIn.show()
+            UTILITYFuncs.notification("Debug: Show all windows!", "This window was opened to assist in UI related debug related to apperances. test test test test test test test test test test test test test test test test test test thank you")
+            window_update.show()
+            dialog_about.show()
+            dialog_accountSuspended.show()
+            dialog_error.show()
+            dialog_signInFailure.show()
+            if platform.system() == "Windows":
+                window_webView.show()
+
     # -----
 
     
@@ -2175,9 +2264,14 @@ if developmental == False:
         window_storeNotSignedIn = uic.loadUi(str(PurePath(resource_path("storeNotSignedIn.ui"))))
         window_expandedNews = uic.loadUi(str(PurePath(resource_path("expandedNews.ui"))))
         window_changelog = uic.loadUi(str(PurePath(resource_path("changelog.ui"))))
-        window_webView = uic.loadUi(str(PurePath(resource_path("webView.ui"))))
+        if platform.system() == "Windows":
+            window_webView = uic.loadUi(str(PurePath(resource_path("webView.ui"))))
+
+        else:
+            UTILITYFuncs.logAndPrint("INFO", 'Not using PyQtWebEngine because it is mac os')
         window_changePassword = uic.loadUi(str(PurePath(resource_path("changePassword.ui"))))
         window_appMenu = uic.loadUi(str(PurePath(resource_path("appMenu.ui"))))
+        window_update = uic.loadUi(str(PurePath(resource_path("update.ui"))))
         dialog_signInFailure = uic.loadUi(str(PurePath(resource_path("signInFailure.ui"))))
         dialog_accountSuspended = uic.loadUi(str(PurePath(resource_path("accountSuspended.ui"))))
         dialog_error = uic.loadUi(str(PurePath(resource_path("error.ui"))))
@@ -2205,9 +2299,14 @@ elif developmental == True:
         window_storeNotSignedIn = uic.loadUi(str(PurePath("ui/storeNotSignedIn.ui")))
         window_expandedNews = uic.loadUi(str(PurePath("ui/expandedNews.ui")))
         window_changelog = uic.loadUi(str(PurePath("ui/changelog.ui")))
-        window_webView = uic.loadUi(str(PurePath("ui/webView.ui")))
+        if platform.system() == "Windows":
+            window_webView = uic.loadUi(str(PurePath("ui/webView.ui")))
+
+        elif platform.system() == "Darwin":
+            UTILITYFuncs.logAndPrint("INFO", "Not creating the webview window because you're on mac os")
         window_changePassword = uic.loadUi(str(PurePath("ui/changePassword.ui")))
         window_appMenu = uic.loadUi(str(PurePath("ui/appMenu.ui")))
+        window_update = uic.loadUi(str(PurePath("ui/update.ui")))
         dialog_signInFailure = uic.loadUi(str(PurePath("ui/signInFailure.ui")))
         dialog_accountSuspended = uic.loadUi(str(PurePath("ui/accountSuspended.ui")))
         dialog_error = uic.loadUi(str(PurePath("ui/error.ui")))
@@ -2266,13 +2365,17 @@ window_expandedNews.openUrl.clicked.connect(UIFuncs.openUrlButton)
 dialog_error.QUIT.clicked.connect(UIFuncs.quitErrorDialog)
 
 # Web view
-WEBVIEW = WebView
-window_webView.back.clicked.connect(WEBVIEW.back)
-window_webView.forward.clicked.connect(WEBVIEW.forward)
-window_webView.reload.clicked.connect(WEBVIEW.reload)
-window_webView.web.loadFinished.connect(WEBVIEW.doneLoading)
-window_webView.web.loadStarted.connect(WEBVIEW.startLoading)
-window_webView.web.loadProgress.connect(WEBVIEW.progress)
+if platform.system() == "Windows":
+    WEBVIEW = WebView
+    window_webView.back.clicked.connect(WEBVIEW.back)
+    window_webView.forward.clicked.connect(WEBVIEW.forward)
+    window_webView.reload.clicked.connect(WEBVIEW.reload)
+    window_webView.web.loadFinished.connect(WEBVIEW.doneLoading)
+    window_webView.web.loadStarted.connect(WEBVIEW.startLoading)
+    window_webView.web.loadProgress.connect(WEBVIEW.progress)
+
+elif platform.system() == "Darwin":
+    UTILITYFuncs.logAndPrint("INFO", "Not setting up the webview window because you're on mac os.")
 
 # Jade Assistant menu
 window_appMenu.launchButton.clicked.connect(UIFuncs.launchApp)
@@ -2297,6 +2400,10 @@ window_changePassword.button.clicked.connect(UIFuncs.changePassword)
 
 # App Menu
 window_appMenu.progressBar.hide()
+
+# Update menu
+window_update.download.clicked.connect(UIFuncs.openUpdatePage)
+window_update.notNow.clicked.connect(UIFuncs.notNowUpdate)
 
 # -----
 # Set properties of windows
@@ -2386,7 +2493,14 @@ if doMain == True:
     JadeAssistant_UpdateThread.start()
     JadeAssistant_DownloadThread.start()
 
+    if update == "yes":
+        window_update.show()
 
+    else:
+        UTILITYFuncs.logAndPrint("INFO", "Updates not required.")
+
+    UIFuncs.debugOpenAllWindows()
+    UTILITYFuncs.logAndPrint("TRUEPATH", TruePath)
 
     app.exec()
 
