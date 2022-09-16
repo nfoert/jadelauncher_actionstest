@@ -1,10 +1,13 @@
 <!-- PROJECT LOGO -->
 <!-- Thanks to https://github.com/othneildrew/Best-README-Template/blob/master/README.md-->
+![Open Issues](https://img.shields.io/github/issues/nfoert/jadelauncher) 
+
+
 <br />
 <div align="center">
   <a href="https://github.com/nfoert/jadelauncher">
     <img src="assets/JadeLauncherLogo.png" alt="Logo" width="150" height="100">
-  </a>
+  </a> 
 
   <h3 align="center">Jade Launcher</h3>
 
