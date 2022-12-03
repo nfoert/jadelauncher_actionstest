@@ -53,7 +53,7 @@ import assets #The resources for PyQt
 
 Version_MAJOR = 1
 Version_MINOR = 0
-Version_PATCH = 0 # Actually 12, 10 for test
+Version_PATCH = 0
 developmental = False #True = for .py & False = for .exe / mac executable
 debug = False
 debugOpenAllWindows = False
@@ -172,7 +172,7 @@ class Account:
         try:
             USERNAME = accountFileLines[0]
             PASSWORD = accountFileLines[1]
-            UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/Authenticate: Authenticating with username: {USERNAME} and password: {PASSWORD}")
+            UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/Authenticate: Authenticating with username: {USERNAME}")
             try:
                 authenticateRequest = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/get?user={USERNAME},password={PASSWORD}&")
                 authenticateRequest.raise_for_status()
@@ -1281,16 +1281,16 @@ class UTILITYFuncs:
                         return result
 
                 except:
-                    UTILITYFuncs.logAndPrint("SUBSTRING", f"UTILTYFuncs/substring: There was a problem finishing substringing with input '{inputString}'")
-                    raise Exception("Could not finish substringing.")
+                    UTILITYFuncs.logAndPrint("SUBSTRING", f"UTILTYFuncs/substring: There was a problem substringing.")
+                    UTILITYFuncs.error("Could not finish substringing!")
 
             except:
-                UTILITYFuncs.logAndPrint("SUBSTRING", f"UTILTYFuncs/substring: Unable to find the second string with input '{inputString}'")
-                raise Exception("Could not find the second string.")
+                UTILITYFuncs.logAndPrint("SUBSTRING", f"UTILTYFuncs/substring: Unable to find the second string while substringing.")
+                UTILITYFuncs.error("Could not find the second string while substringing!")
         
         except:
-            UTILITYFuncs.logAndPrint("SUBSTRING", f"UTILTYFuncs/substring: Unable to find the first string with input '{inputString}'")
-            raise Exception("Could not find the first string.")
+            UTILITYFuncs.logAndPrint("SUBSTRING", f"UTILTYFuncs/substring: Unable to find the first string while substringing.")
+            UTILITYFuncs.error("Could not find the first string while substringing!")
 
     def error(Error):
         global killThreads
@@ -2067,10 +2067,10 @@ class UIFuncs:
 
     def openChangelog():
         if platform.system() == "Windows":
-            WEBVIEW.openWebView("https://nofoert.wixsite.com/jade/blog/categories/changelogs")
+            WEBVIEW.openWebView("https://nfoert.pythonanywhere.com/jadesite/allposts?category=changelog&")
 
         elif platform.system() == "Darwin":
-            webbrowser.open("https://nofoert.wixsite.com/jade/blog/categories/changelogs")
+            webbrowser.open("https://nfoert.pythonanywhere.com/jadesite/allposts?category=changelog&")
 
         else:
             UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
@@ -2230,12 +2230,12 @@ class UIFuncs:
 
 print("----------")
 print("Jade Launcher")
-print(f"Version: {Version_MAJOR}.{Version_MAJOR}.{Version_PATCH}")
+print(f"Version: {Version_MAJOR}.{Version_MINOR}.{Version_PATCH}")
 print("----------")
 
 UTILITYFuncs.log("INFO", " ")
 UTILITYFuncs.log("INFO", "-----")
-UTILITYFuncs.log("INFO", f"| Jade Launcher | Version: {Version_MAJOR}.{Version_MAJOR}.{Version_PATCH}")
+UTILITYFuncs.log("INFO", f"| Jade Launcher | Version: {Version_MAJOR}.{Version_MINOR}.{Version_PATCH}")
 UTILITYFuncs.log("INFO", "-----")
 
 # ----------
@@ -2500,7 +2500,7 @@ if doMain == True:
         UTILITYFuncs.logAndPrint("INFO", "Updates not required.")
 
     UIFuncs.debugOpenAllWindows()
-    UTILITYFuncs.logAndPrint("TRUEPATH", TruePath)
+    #UTILITYFuncs.logAndPrint("TRUEPATH", TruePath)
 
     app.exec()
 
