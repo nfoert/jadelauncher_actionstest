@@ -29,6 +29,8 @@ This repo is for me to have a backup, and for you to make [issues](https://githu
 
 You can download the Jade Launcher [here](https://nofoert.wixsite.com/jade/download).
 
+Sounds from [Notification Sounds](https://notificationsounds.com/)
+
 <p align="center">
   <a href="https://skillicons.dev">
     <img src="https://skillicons.dev/icons?i=py,github,vscode,qt" />
