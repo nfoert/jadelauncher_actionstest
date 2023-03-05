@@ -12,9 +12,9 @@
   <h3 align="center">Jade Launcher</h3>
 
   <p align="center">
-    The launcher for Jade Assistant!
+    The launcher for Jade Assistant or Jade Apps
     <br />
-    <a href="https://nfoert.pythonanywhere.com/jadesite/download"><strong>Download »</strong></a>
+    <a href="https://nfoert.pythonanywhere.com/jadesite/jadelauncher"><strong>Download »</strong></a>
     <br />
     <br />
     <a href="https://github.com/nfoert/jadelauncher/issues">Report Bugs »</a>
@@ -27,7 +27,7 @@
 The Jade Launcher is the one and only place to manage your Jade Account, download and launch apps like [Jade Assistant](https://github.com/nfoert/jadeassistant).
 This repo is for me to have a backup, and for you to make [issues](https://github.com/nfoert/jadelauncher/issues) when you find bugs!
 
-You can download the Jade Launcher [here](https://nfoert.pythonanywhere.com/jadesite/download).
+You can download the Jade Launcher [here](https://nfoert.pythonanywhere.com/jadesite/jadelauncher).
 
 Sounds from [Notification Sounds](https://notificationsounds.com/)
 
