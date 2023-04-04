@@ -5,9 +5,12 @@
 
 <br />
 <div align="center">
-  <a href="https://github.com/nfoert/jadelauncher">
-    <img src="assets/JadeLauncherLogo.png" alt="Logo" width="225" height="150">
-  </a> 
+  
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="assets/JadeLauncherLogo.png", width=255>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/lightJadeLogo.png", width=255>
+    <img alt="Jade Launcher">
+  </picture>
 
   <h3 align="center">Jade Launcher</h3>
 
