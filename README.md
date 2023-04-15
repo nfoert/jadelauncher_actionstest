@@ -27,8 +27,7 @@
   <hr>
 </div>
 
-The Jade Launcher is the one and only place to manage your Jade Account, download and launch apps like [Jade Assistant](https://github.com/nfoert/jadeassistant).
-This repo is for me to have a backup, and for you to make [issues](https://github.com/nfoert/jadelauncher/issues) when you find bugs!
+The Jade Launcher is the one and only place to manage your Jade Account and to download and launch apps like [Jade Assistant](https://github.com/nfoert/jadeassistant).
 
 You can download the Jade Launcher [here](https://nfoert.pythonanywhere.com/jadesite/jadelauncher).
 
@@ -39,3 +38,8 @@ Sounds from [Notification Sounds](https://notificationsounds.com/)
     <img src="https://skillicons.dev/icons?i=py,github,vscode,qt" />
   </a>
 </p>
+
+
+
+## Building from source
+Clone this repo using `git clone https://github.com/nfoert/jadelauncher`. Create a new virtual enviroment with `python -m venv .venv`. Activate it using the method for your system. Run `pip install -r requirements.txt` to install the necessary packages. Once that is done, also install `pyinstaller` with `pip install pyinstaller`. Finally, check that line 57 of `newJadeLauncher.py` has `developmental = False`. Then run `pyinstaller newJadeLauncherWINDOWS.spec` you should get a executable of the Jade Launcher inside the `dist` folder.
