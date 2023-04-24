@@ -6,210 +6,263 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1176</width>
-    <height>700</height>
+    <width>1015</width>
+    <height>645</height>
    </rect>
-  </property>
-  <property name="font">
-   <font>
-    <family>Calibri</family>
-   </font>
   </property>
   <property name="windowTitle">
    <string>Jade Launcher | Web View</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../assets.qrc">
-    <normaloff>:/images/assets/jadeIcon.png</normaloff>:/images/assets/jadeIcon.png</iconset>
+    <normaloff>:/icons/assets/icons/jadeIcon.png</normaloff>:/icons/assets/icons/jadeIcon.png</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow {
+	border-image: url(:/backgrounds/assets/backgrounds/background.png) 0 0 0 0 stretch stretch;
+}
+
+</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_2">
-    <item row="4" column="0" colspan="3">
-     <widget class="QFrame" name="frame">
-      <property name="frameShape">
-       <enum>QFrame::Box</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <property name="lineWidth">
-       <number>1</number>
-      </property>
-      <layout class="QGridLayout" name="gridLayout">
-       <item row="0" column="0">
-        <widget class="QWebEngineView" name="web" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="0" column="0" rowspan="4" colspan="3">
-     <widget class="QGroupBox" name="groupBox">
-      <property name="title">
-       <string/>
-      </property>
-      <widget class="QLabel" name="label_2">
-       <property name="geometry">
-        <rect>
-         <x>120</x>
-         <y>20</y>
-         <width>16</width>
-         <height>71</height>
-        </rect>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>16</width>
-         <height>91</height>
-        </size>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="pixmap">
-        <pixmap resource="../assets.qrc">:/images/assets/VerticalLine.png</pixmap>
-       </property>
-       <property name="scaledContents">
-        <bool>true</bool>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>20</y>
-         <width>100</width>
-         <height>70</height>
-        </rect>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>100</width>
-         <height>70</height>
-        </size>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="pixmap">
-        <pixmap resource="../assets.qrc">:/images/assets/JadeLauncherLogo.png</pixmap>
-       </property>
-       <property name="scaledContents">
-        <bool>true</bool>
-       </property>
-      </widget>
-      <widget class="QWidget" name="layoutWidget">
-       <property name="geometry">
-        <rect>
-         <x>146</x>
-         <y>12</y>
-         <width>1147</width>
-         <height>81</height>
-        </rect>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout">
-          <item>
-           <widget class="QLabel" name="title">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Loading...&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="url">
-            <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Loading...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <widget class="QLabel" name="title">
+          <property name="styleSheet">
+           <string notr="true">color: rgb(255, 255, 255);
+font: 14pt &quot;Calibri&quot;;
+padding-left:20px</string>
+          </property>
+          <property name="text">
+           <string>Loading...</string>
+          </property>
+         </widget>
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QPushButton" name="back">
+            <property name="minimumSize">
+             <size>
+              <width>30</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>30</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Back&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+	border-radius:3px;
+	
+	background-color: rgb(208, 208, 208);
+	padding-top:4px;
+	padding-bottom:4px;
+}
+
+QPushButton:hover {
+	background-color: rgb(200, 200, 200);
+}
+
+QPushButton:pressed {
+	
+	background-color: rgb(243, 243, 243);
+}
+</string>
+            </property>
             <property name="text">
-             <string>&lt; Back</string>
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="../assets.qrc">
+              <normaloff>:/icons/assets/icons/back.png</normaloff>:/icons/assets/icons/back.png</iconset>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="reload">
+            <property name="minimumSize">
+             <size>
+              <width>30</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>30</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reload&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+	border-radius:3px;
+	
+	background-color: rgb(208, 208, 208);
+	padding-top:4px;
+	padding-bottom:4px;
+}
+
+QPushButton:hover {
+	background-color: rgb(200, 200, 200);
+}
+
+QPushButton:pressed {
+	
+	background-color: rgb(243, 243, 243);
+}
+</string>
+            </property>
             <property name="text">
-             <string>Reload</string>
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="../assets.qrc">
+              <normaloff>:/icons/assets/icons/reload.png</normaloff>:/icons/assets/icons/reload.png</iconset>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="forward">
+            <property name="minimumSize">
+             <size>
+              <width>30</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>30</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Forward&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+	border-radius:3px;
+	
+	background-color: rgb(208, 208, 208);
+	padding-top:4px;
+	padding-bottom:4px;
+}
+
+QPushButton:hover {
+	background-color: rgb(200, 200, 200);
+}
+
+QPushButton:pressed {
+	
+	background-color: rgb(243, 243, 243);
+}
+</string>
+            </property>
             <property name="text">
-             <string>Forward &gt;</string>
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="../assets.qrc">
+              <normaloff>:/icons/assets/icons/forward.png</normaloff>:/icons/assets/icons/forward.png</iconset>
             </property>
            </widget>
           </item>
           <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
+           <widget class="QLineEdit" name="url"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="go">
+            <property name="minimumSize">
              <size>
-              <width>900</width>
-              <height>20</height>
+              <width>50</width>
+              <height>0</height>
              </size>
             </property>
-           </spacer>
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+	border-radius:3px;
+	
+	background-color: rgb(208, 208, 208);
+	padding-top:4px;
+	padding-bottom:4px;
+}
+
+QPushButton:hover {
+	background-color: rgb(200, 200, 200);
+}
+
+QPushButton:pressed {
+	
+	background-color: rgb(243, 243, 243);
+}
+</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="../assets.qrc">
+              <normaloff>:/icons/assets/icons/check.png</normaloff>:/icons/assets/icons/check.png</iconset>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
        </layout>
-      </widget>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>100</height>
-       </size>
-      </property>
-     </spacer>
+      </item>
+      <item>
+       <widget class="QFrame" name="frame">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="0" column="0">
+          <widget class="QWebEngineView" name="web" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">border-radius:10px;</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>

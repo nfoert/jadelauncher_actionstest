@@ -18,7 +18,13 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../assets.qrc">
-    <normaloff>:/images/assets/jadeIcon.png</normaloff>:/images/assets/jadeIcon.png</iconset>
+    <normaloff>:/icons/assets/icons/jadeIcon.png</normaloff>:/icons/assets/icons/jadeIcon.png</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QDialog {
+	border-image: url(:/backgrounds/assets/backgrounds/errorBackground.png) 0 0 0 0 stretch stretch;
+}
+</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0">
@@ -33,17 +39,23 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>25</height>
+          </size>
+         </property>
          <property name="maximumSize">
           <size>
            <width>150</width>
-           <height>100</height>
+           <height>25</height>
           </size>
          </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../assets.qrc">:/images/assets/JadeAccount.png</pixmap>
+          <pixmap resource="../assets.qrc">:/logos/assets/logos/Jade Account.png</pixmap>
          </property>
          <property name="scaledContents">
           <bool>true</bool>
@@ -73,6 +85,9 @@
            <family>Calibri</family>
           </font>
          </property>
+         <property name="styleSheet">
+          <string notr="true">color: rgb(255, 255, 255);</string>
+         </property>
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;Incorrect credentials.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-style:italic;&quot;&gt;Please enter the correct username and password and try again.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
@@ -91,10 +106,37 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="minimumSize">
+        <size>
+         <width>20</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="font">
         <font>
          <family>Calibri</family>
         </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+	background-color: rgb(0, 150, 80);
+	border-color: rgb(0, 255, 0);
+	border-radius: 5px;
+	font: 10pt &quot;Calibri&quot;;
+	
+	color: rgb(255, 255, 255);
+    padding-left:20px;
+    padding-right:20px;
+}
+
+QPushButton:hover {
+	background-color: rgb(0, 170, 100);
+}
+
+QPushButton:pressed {
+	
+	background-color: rgb(0, 200, 120);
+}</string>
        </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -117,32 +159,32 @@
  <connections>
   <connection>
    <sender>buttonBox</sender>
-   <signal>accepted()</signal>
+   <signal>rejected()</signal>
    <receiver>Dialog</receiver>
-   <slot>accept()</slot>
+   <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>326</x>
+     <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>157</x>
+     <x>286</x>
      <y>274</y>
     </hint>
    </hints>
   </connection>
   <connection>
    <sender>buttonBox</sender>
-   <signal>rejected()</signal>
+   <signal>accepted()</signal>
    <receiver>Dialog</receiver>
-   <slot>reject()</slot>
+   <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>258</x>
+     <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>286</x>
+     <x>157</x>
      <y>274</y>
     </hint>
    </hints>

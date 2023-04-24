@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>492</width>
+    <width>673</width>
     <height>306</height>
    </rect>
   </property>
@@ -15,7 +15,13 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../assets.qrc">
-    <normaloff>:/images/assets/jadeIcon.png</normaloff>:/images/assets/jadeIcon.png</iconset>
+    <normaloff>:/icons/assets/icons/jadeIcon.png</normaloff>:/icons/assets/icons/jadeIcon.png</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QDialog {
+	border-image: url(:/backgrounds/assets/backgrounds/errorBackground.png) 0 0 0 0 stretch stretch;
+}
+</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
@@ -33,25 +39,41 @@
          <property name="minimumSize">
           <size>
            <width>150</width>
-           <height>100</height>
+           <height>25</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
            <width>150</width>
-           <height>100</height>
+           <height>25</height>
           </size>
          </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../assets.qrc">:/images/assets/JadeLauncherLogo.png</pixmap>
+          <pixmap resource="../assets.qrc">:/logos/assets/logos/Jade Launcher.png</pixmap>
          </property>
          <property name="scaledContents">
           <bool>true</bool>
          </property>
         </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>10</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
        </item>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout">
@@ -61,6 +83,9 @@
             <font>
              <family>Calibri</family>
             </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color:white;</string>
            </property>
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:20pt;&quot;&gt;There was a problem!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -73,6 +98,9 @@
             <font>
              <family>Calibri</family>
             </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color:white;</string>
            </property>
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-style:italic;&quot;&gt;When running some code, an error occured. The execption is shown below.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;- One potental problem may be your connection. The first step is to check your internet, then try again.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -136,6 +164,9 @@
          <family>Calibri</family>
         </font>
        </property>
+       <property name="styleSheet">
+        <string notr="true">color:white;</string>
+       </property>
        <property name="text">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Loading execption...&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
@@ -153,6 +184,9 @@
            <family>Calibri</family>
           </font>
          </property>
+         <property name="styleSheet">
+          <string notr="true">color:white;</string>
+         </property>
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;If you can't figure out what happened, please open an issue on my GitHub. &lt;/span&gt;&lt;span style=&quot; font-weight:600; font-style:italic;&quot;&gt;(https://github.com/nfoert/jadelauncher)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
@@ -163,10 +197,39 @@
        </item>
        <item>
         <widget class="QPushButton" name="QUIT">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>20</height>
+          </size>
+         </property>
          <property name="font">
           <font>
            <family>Calibri</family>
+           <pointsize>10</pointsize>
+           <weight>50</weight>
+           <italic>false</italic>
+           <bold>false</bold>
           </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton {
+	background-color: rgb(0, 150, 80);
+	border-color: rgb(0, 255, 0);
+	border-radius: 10px;
+	font: 10pt &quot;Calibri&quot;;
+	
+	color: rgb(255, 255, 255);
+}
+
+QPushButton:hover {
+	background-color: rgb(0, 170, 100);
+}
+
+QPushButton:pressed {
+	
+	background-color: rgb(0, 200, 120);
+}</string>
          </property>
          <property name="text">
           <string>Quit</string>
