@@ -7,8 +7,8 @@
 <div align="center">
   
   <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/JadeLauncherLogo.png", width=255>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/lightJadeLogo.png", width=255>
+    <source media="(prefers-color-scheme: light)" srcset="https://github.com/nfoert/jadelauncher/blob/main/assets/logos/Dark%20Jade%20Launcher.png", width=255>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/nfoert/jadelauncher/blob/main/assets/logos/Jade%20Launcher.png", width=255>
     <img alt="Jade Launcher">
   </picture>
 
