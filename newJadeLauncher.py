@@ -70,7 +70,7 @@ else:
 
 Version_MAJOR = 2
 Version_MINOR = 0
-Version_PATCH = 0
+Version_PATCH = 1
 debug = False
 debugOpenAllWindows = False
 
@@ -2426,6 +2426,8 @@ class UIFuncs:
 
     # Offline Screen
     def closeOffline():
+        global TruePath
+
         window_offline.hide()
         jadeStatus.setStatus("offline")
         window_main.show()
@@ -2438,6 +2440,21 @@ class UIFuncs:
         window_main.status_bar.setText("You're offline! Connect to the internet, then restart the Launcher.")
         window_main.jadeAssistant_status.hide()
         window_main.jadeApps_status.hide()
+
+        if developmental:
+            if Path(f"./apps/jadeassistant/Jade Assistant.exe").exists():
+                window_main.jadeAssistant_launch.show()
+
+            if Path(f"./apps/jadeapps/Jade Apps.exe").exists():
+                window_main.jadeApps_launch.show()
+
+        else:
+            if Path(f"{TruePath}/apps/jadeassistant/Jade Assistant.exe").exists():
+                window_main.jadeAssistant_launch.show()
+
+            if Path(f"{TruePath}/apps/jadeapps/Jade Apps.exe").exists():
+                window_main.jadeApps_launch.show()
+
         
 
     # Main Screen
