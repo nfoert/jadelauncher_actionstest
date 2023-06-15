@@ -38,8 +38,7 @@ a.datas += [('accountDetails.ui','./ui/accountDetails.ui', "DATA"),
     ("status_ok.png", "./assets/icons/status_ok.png", "DATA"),
     ("status_offline.png", "./assets/icons/status_offline.png", "DATA"),
     ("status_load.gif", "./assets/animations/status_load.gif", "DATA"),
-    ("notification.mp3", "./assets/audio/notification.mp3", "DATA"),
-    ("update.bat", "update.bat", "DATA")
+    ("notification.mp3", "./assets/audio/notification.mp3", "DATA")
 ]
 
 pyz = PYZ(a.pure, a.zipped_data,

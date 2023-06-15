@@ -10,7 +10,6 @@ to switch to PyQt5. (https://pypi.org/project/PyQt5/) Unfortunately, that was su
 Jade Software was built by nfoert over nearly a year and a half.
 '''
 
-
 # ----------
 # Imports
 # ----------
@@ -24,11 +23,11 @@ from time import sleep
 import random
 from pathlib import PurePath, Path
 import os
+import stat
 import platform
 import webbrowser
 import threading
 import sys
-import shelve
 
 # Third Party Imports
 from PyQt5 import QtWidgets, uic, QtCore, QtGui
@@ -37,7 +36,6 @@ from PyQt5.QtCore import QUrl, QTimer
 
 import requests
 import pwnedpasswords
-from tqdm import tqdm
 
 # Thanks to Цзыюнь Янь's answer here https://stackoverflow.com/questions/68531326/what-is-the-error-in-the-code-for-this-playsound-module-even-though-the-syntax-i
 import playsound
@@ -54,7 +52,7 @@ import psutil
 import assets #The resources for PyQt
 import jadeDots
 import jadeStatus
-import jadeConfig
+from jade_config import config
 
 
 # ----------
@@ -69,8 +67,8 @@ else:
     developmental = True
 
 Version_MAJOR = 2
-Version_MINOR = 0
-Version_PATCH = 1
+Version_MINOR = 1
+Version_PATCH = 0
 debug = False
 debugOpenAllWindows = False
 
@@ -761,11 +759,50 @@ class WebView:
             window_webView.web.setUrl(QUrl(url))
 
 class App:
-    def __init__(self, name, description, path, version):
-        self.name = name
-        self.description = description
-        self.path = path
-        self.version = version
+    def __init__(self, dictionary, debug=False):
+        self.name = dictionary["name"]
+        self.description = dictionary["description"]
+        self.path = dictionary["path"]
+        self.version = dictionary["version"]
+        self.download_folder = dictionary["download_folder"]
+        self.download_url = dictionary["download_url"]
+        self.exe_location = dictionary["exe_location"]
+        self.version_file_location = dictionary["version_file_location"]
+        self.version_url = dictionary["version_url"]
+        self.dot_name = dictionary["dot_name"]
+        self.button_launch = dictionary["button_launch"]
+        self.button_download = dictionary["button_download"]
+        self.button_update = dictionary["button_update"]
+        self.button_remove = dictionary["button_remove"]
+        self.label_status = dictionary["label_status"]
+        self.label_version = dictionary["label_version"]
+        self.main_button_launch = dictionary["main_button_launch"]
+        self.button_launch_loop = dictionary["button_launch_loop"]
+        self.button_download_loop = dictionary["button_download_loop"]
+        self.button_update_loop = dictionary["button_update_loop"]
+        self.button_remove_loop = dictionary["button_remove_loop"]
+        self.label_status_loop = dictionary["label_status_loop"]
+        self.label_version_loop = dictionary["label_version_loop"]
+        self.main_button_launch_loop = dictionary["main_button_launch_loop"]
+
+        if debug:
+            print(f"Item self.name is '{self.name}' with type '{type(self.name)}'")
+            print(f"Item self.description is '{self.description}' with type '{type(self.description)}'")
+            print(f"Item self.path is '{self.path}' with type '{type(self.path)}'")
+            print(f"Item self.version is '{self.version}' with type '{type(self.version)}'")
+            print(f"Item self.download_folder is '{self.download_folder}' with type '{type(self.download_folder)}'")
+            print(f"Item self.download_url is '{self.download_url}' with type '{type(self.download_url)}'")
+            print(f"Item self.exe_location is '{self.exe_location}' with type '{type(self.exe_location)}'")
+            print(f"Item self.version_file_location is '{self.version_file_location}' with type '{type(self.version_file_location)}'")
+            print(f"Item self.dot_name is '{self.dot_name}' with type '{type(self.dot_name)}'")
+            print(f"Item self.button_launch is '{self.button_launch}' with type '{type(self.button_launch)}'")
+            print(f"Item self.button_download is '{self.button_download}' with type '{type(self.button_download)}'")
+            print(f"Item self.button_update is '{self.button_update}' with type '{type(self.button_update)}'")
+            print(f"Item self.button_remove is '{self.button_remove}' with type '{type(self.button_remove)}'")
+            print(f"Item self.label_status is '{self.label_status}' with type '{type(self.label_status)}'")
+            print(f"Item self.label_version is '{self.label_version}' with type '{type(self.label_version)}'")
+            print(f"Item self.main_button_launch is '{self.main_button_launch}' with type '{type(self.main_button_launch)}'")
+
         self.downloadAppVar = False
         self.updateAppVar = False
         self.state = ""
@@ -775,130 +812,55 @@ class App:
         global selectedApp
         UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: Opening app menu for {self.name}...")
         selectedApp = self.name
-        if self.name == "Jade Assistant":
-            window_status.jadeAssistant_version.setText(f"{self.version}")
-
-        elif self.name == "Jade Apps":
-            window_status.jadeApps_version.setText(f"{self.version}")
-
-        else:
-            UTILITYFuncs.error(f"The app {self.name} is unknown")
+        self.label_version.setText(f"{self.version}")
 
         if self.state == "ready":
             UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is ready.")
-            if self.name == "Jade Assistant":
-                window_status.jadeAssistant_launch.show()
-                window_status.jadeAssistant_download.hide()
-                window_status.jadeAssistant_update.hide()
-                window_status.jadeAssistant_remove.show()
-                window_status.jadeAssistant_status.setText("Up to date")
-
-            elif self.name == "Jade Apps":
-                window_status.jadeApps_launch.show()
-                window_status.jadeApps_download.hide()
-                window_status.jadeApps_update.hide()
-                window_status.jadeApps_remove.show()
-                window_status.jadeApps_status.setText("Up to date")
-
-            else:
-                UTILITYFuncs.error(f"The app {self.name} is unknown")
-        
+            self.button_launch.show()
+            self.button_download.hide()
+            self.button_update.hide()
+            self.button_remove.show()
+            self.label_status.setText("Up to date")
 
         elif self.state == "download":
             UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is download.")
-            if self.name == "Jade Assistant":
-                window_status.jadeAssistant_launch.hide()
-                window_status.jadeAssistant_download.show()
-                window_status.jadeAssistant_update.hide()
-                window_status.jadeAssistant_remove.hide()
-                window_status.jadeAssistant_status.setText(f"Download version {self.newVersion}")
-
-            elif self.name == "Jade Apps":
-                window_status.jadeApps_launch.hide()
-                window_status.jadeApps_download.show()
-                window_status.jadeApps_update.hide()
-                window_status.jadeApps_remove.hide()
-                window_status.jadeApps_status.setText(f"Download version {self.newVersion}")
-
-            else:
-                UTILITYFuncs.error(f"The app {self.name} is unknown")
+            self.button_launch.hide()
+            self.button_download.show()
+            self.button_update.hide()
+            self.button_remove.hide()
+            self.label_status.setText(f"Download version {self.newVersion}")
 
         elif self.state == "downloading":
             UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is downloading.")
-            if self.name == "Jade Assistant":
-                window_status.jadeAssistant_launch.hide()
-                window_status.jadeAssistant_download.show()
-                window_status.jadeAssistant_update.hide()
-                window_status.jadeAssistant_remove.hide()
-                window_status.jadeAssistant_status.setText(f"Downloading version {self.newVersion}...")
-
-            elif self.name == "Jade Apps":
-                window_status.jadeApps_launch.hide()
-                window_status.jadeApps_download.show()
-                window_status.jadeApps_update.hide()
-                window_status.jadeApps_remove.hide()
-                window_status.jadeApps_status.setText(f"Downloading version {self.newVersion}...")
-
-            else:
-                UTILITYFuncs.error(f"The app {self.name} is unknown")
-        
+            self.button_launch.hide()
+            self.button_download.show()
+            self.button_update.hide()
+            self.button_remove.hide()
+            self.label_status.setText(f"Downloading version {self.newVersion}...")
 
         elif self.state == "update":
             UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is updates.")
-            if self.name == "Jade Assistant":
-                window_status.jadeAssistant_launch.show()
-                window_status.jadeAssistant_download.hide()
-                window_status.jadeAssistant_update.show()
-                window_status.jadeAssistant_remove.show()
-                window_status.jadeAssistant_status.setText(f"Update to {self.newVersion} avaliable")
-
-            elif self.name == "Jade Apps":
-                window_status.jadeApps_launch.show()
-                window_status.jadeApps_download.hide()
-                window_status.jadeApps_update.show()
-                window_status.jadeApps_remove.show()
-                window_status.jadeApps_status.setText(f"Update to {self.newVersion} avaliable")
-
-            else:
-                UTILITYFuncs.error(f"The app {self.name} is unknown")
+            self.button_launch.show()
+            self.button_download.hide()
+            self.button_update.show()
+            self.button_remove.show()
+            self.label_status.setText(f"Update to {self.newVersion} avaliable")
 
         elif self.state == "updating":
             UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is updating.")
-            if self.name == "Jade Assistant":
-                window_status.jadeAssistant_launch.hide()
-                window_status.jadeAssistant_download.hide()
-                window_status.jadeAssistant_update.show()
-                window_status.jadeAssistant_remove.hide()
-                window_status.status.setText(f"Updating to version {self.newVersion}...")
-
-            elif self.name == "Jade Apps":
-                window_status.jadeApps_launch.hide()
-                window_status.jadeApps_download.hide()
-                window_status.jadeApps_update.show()
-                window_status.jadeApps_remove.hide()
-                window_status.status.setText(f"Updating to version {self.newVersion}...")
-
-            else:
-                UTILITYFuncs.error(f"The app {self.name} is unknown")
+            self.button_launch.hide()
+            self.button_download.hide()
+            self.button_update.show()
+            self.button_remove.hide()
+            self.label_status.setText(f"Updating to version {self.newVersion}...")
             
         elif self.state == "readyoffline":
             UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is readyoffline.")
-            if self.name == "Jade Assistant":
-                window_status.jadeAssistant_launch.show()
-                window_status.jadeAssistant_download.hide()
-                window_status.jadeAssistant_update.hide()
-                window_status.jadeAssistant_remove.show()
-
-            elif self.name == "Jade Apps":
-                window_status.jadeApps_launch.show()
-                window_status.jadeApps_download.hide()
-                window_status.jadeApps_update.hide()
-                window_status.jadeApps_remove.show()
-
-            else:
-                UTILITYFuncs.error(f"The app {self.name} is unknown")
-        
-
+            self.button_launch.show()
+            self.button_download.hide()
+            self.button_update.hide()
+            self.button_remove.show()
+    
         else:
             UTILITYFuncs.logAndPrint("INFO", f"App/openAppMenu: State for {self.name} is not recognized. '{self.state}'")
             return False
@@ -913,19 +875,11 @@ class App:
         global TruePath
         try:
             if platform.system() == "Windows":
-                if self.name == "Jade Assistant":
-                    subprocess.Popen("./apps/jadeassistant/Jade Assistant.exe")
-                    UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (windows)")
-
-                elif self.name == "Jade Apps":
-                    subprocess.Popen("./apps/jadeapps/Jade Apps.exe")
-                    UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (windows)")
-
-                else:
-                    UTILITYFuncs.error(f"App/launchApp: The app {self.name} is unknown")
-                
+                subprocess.Popen(self.exe_location)
+                UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (windows)")
+        
             elif platform.system() == "Darwin":
-                subprocess.run(["open", f"{TruePath}{self.path}"])
+                subprocess.run(["open", f"{TruePath}{self.exe_location}"])
                 killThreads = True
                 UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (mac)")
                 sys.exit()
@@ -949,89 +903,33 @@ class App:
         while killThreads == False:
             if self.downloadAppVar == True:
                 UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Downloading {self.name}...")
-                if self.name == "Jade Assistant":
-                    guiLoopList.append('window_status.jadeAssistant_launch.hide()')
-                    guiLoopList.append('window_status.jadeAssistant_update.hide()')
-                    guiLoopList.append('window_status.jadeAssistant_download.show()')
-                    guiLoopList.append('window_status.jadeAssistant_remove.hide()')
-                    guiLoopList.append('window_status.jadeAssistant_download.setEnabled(False)')
-                    guiLoopList.append('window_status.jadeAssistant_download.setText("Downloading...")')
+                guiLoopList.append(f'{self.button_launch_loop}.hide()')
+                guiLoopList.append(f'{self.button_download_loop}.show()')
+                guiLoopList.append(f'{self.button_download_loop}.setEnabled(False)')
+                guiLoopList.append(f'{self.button_download_loop}.setText("Downloading...")')
+                guiLoopList.append(f'{self.button_update_loop}.hide()')
+                guiLoopList.append(f'{self.button_remove_loop}.hide()')
 
-                elif self.name == "Jade Apps":
-                    guiLoopList.append('window_status.jadeApps_launch.hide()')
-                    guiLoopList.append('window_status.jadeApps_update.hide()')
-                    guiLoopList.append('window_status.jadeApps_download.show()')
-                    guiLoopList.append('window_status.jadeApps_remove.hide()')
-                    guiLoopList.append('window_status.jadeApps_download.setEnabled(False)')
-                    guiLoopList.append('window_status.jadeApps_download.setText("Downloading...")')
-
-                else:
-                    UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
                 self.newVersion = self.newVersion.replace("\n", ".")
-                
-                if platform.system() == "Windows":
-                    end = ".exe"
-
-                elif platform.system() == "Darwin":
-                    end = ""
-
-                else:
-                    UTILITYFuncs.error("You're OS isn't supported! Please use Mac or Windows.")
 
                 try:
                     UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Downloading {self.name}...")
-                    if self.name == "Jade Assistant":
-                        guiLoopList.append('jadeDots.showDot("jadeAssistantDownload")')
-                        guiLoopList.append('jadeDots.setDotPercent(f"jadeAssistantDownload", "Loading...")')
-
-                    elif self.name == "Jade Apps":
-                        guiLoopList.append('jadeDots.showDot("jadeAppsDownload")')
-                        guiLoopList.append('jadeDots.setDotPercent(f"jadeAppsDownload", "Loading...")')
-
-                    else:
-                        UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
+                    guiLoopList.append(f'jadeDots.showDot("{self.dot_name}")')
+                    guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "Loading...")')
 
                     guiLoopList.append('jadeStatus.setStatus("load")')
                     
                     self.state = "downloading"
-                    if self.name == "Jade Assistant":
-                        guiLoopList.append('JadeAssistant.openAppMenu()')
+                    guiLoopList.append(f"{self.label_status_loop}.setText('{self.newVersion}')")
 
-                    elif self.name == "Jade Apps":
-                        guiLoopList.append('JadeApps.openAppMenu()')
+                    app_download = requests.get(self.download_url, stream=True)
 
-                    else:
-                        UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
-                    
-                    DownloadAppPath = self.path.replace(" ", "%20")
-
-                    if self.name == "Jade Assistant":
-                        AppDownload = requests.get(f"https://github.com/nfoert/jadeassistant/raw/main/{DownloadAppPath}{end}", stream=True)
-                        try:
-                            os.mkdir("./apps/")
-                            os.mkdir("./apps/jadeassistant")
-                        except:
-                            UTILITYFuncs.logAndPrint("INFO", "The directories already exist!")
-                        downloadLocation = "./apps/jadeassistant/Jade Assistant.exe"
-
-                    elif self.name == "Jade Apps":
-                        AppDownload = requests.get(f"https://github.com/nfoert/jadeapps/raw/main/{DownloadAppPath}{end}", stream=True)
-                        try:
-                            os.mkdir("./apps/")
-                            os.mkdir("./apps/jadeapps")
-                        except:
-                            UTILITYFuncs.logAndPrint("INFO", "The directories already exist!")
-                        downloadLocation = "./apps/jadeapps/Jade Apps.exe"
-
-                    else:
-                        UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
-
-                    total_size_in_bytes = int(AppDownload.headers.get('content-length', 0))
+                    total_size_in_bytes = int(app_download.headers.get('content-length', 0))
                     bytes_downloaded = 0
                     last = 0
                     
-                    with open(downloadLocation, 'wb') as file:
-                        for data in AppDownload.iter_content(1024):
+                    with open(self.exe_location, 'wb') as file:
+                        for data in app_download.iter_content(1024):
                             file.write(data)
                             bytes_downloaded = bytes_downloaded + 1024
                             percent = bytes_downloaded / total_size_in_bytes
@@ -1039,69 +937,39 @@ class App:
                             percent = round(percent)
                             if last != percent:
                                 last = percent
-                                if self.name == "Jade Assistant":
-                                    guiLoopList.append(f'window_status.jadeAssistant_status.setText("Downloading version {self.newVersion}... [{percent}%]")')
-                                    guiLoopList.append(f'window_main.status_bar.setText("Downloading {self.name} {self.newVersion.replace(chr(10), "")}... [{percent}%]")') #chr(10) is a backslash
-                                    guiLoopList.append(f'jadeDots.setDotPercent("jadeAssistantDownload", "[{percent}%]")')
+                                guiLoopList.append(f'{self.label_status_loop}.setText("Downloading version {self.newVersion}... [{percent}%]")')
+                                guiLoopList.append(f'window_main.status_bar.setText("Downloading {self.name} {self.newVersion.replace(chr(10), "")}... [{percent}%]")') #chr(10) is a backslash
+                                guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "[{percent}%]")')
 
-                                elif self.name == "Jade Apps":
-                                    guiLoopList.append(f'window_status.jadeApps_status.setText("Downloading version {self.newVersion.replace(chr(10), "")}... [{percent}%]")')
-                                    guiLoopList.append(f'window_main.status_bar.setText("Downloading {self.name} {self.newVersion.replace(chr(10), "")}... [{percent}%]")')
-                                    guiLoopList.append(f'jadeDots.setDotPercent("jadeAppsDownload", "[{percent}%]")')
-
-                                else:
-                                    UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
-                                
                             else:
                                 continue
-                            
-
 
                     file.close()
                             
                     if platform.system() == "Darwin":
-                        if self.name == "Jade Assistant":
-                            os.system(f'chmod 775 "{TruePath}Jade Assistant"')
-                        else:
-                            UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
-                    
+                        os.system(f'chmod 775 "{TruePath}{self.name}"')
+
                     else:
                         UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Not Chmodding.")
 
 
                     self.downloadAppVar = False
-                    if self.name == "Jade Assistant":
-                        guiLoopList.append('window_status.jadeAssistant_launch.show()')
-                        guiLoopList.append('window_status.jadeAssistant_update.hide()')
-                        guiLoopList.append('window_status.jadeAssistant_download.setEnabled(True)')
-                        guiLoopList.append('window_status.jadeAssistant_download.setText("Download")')
-                        guiLoopList.append('window_status.jadeAssistant_download.hide()')
-                        guiLoopList.append('window_status.jadeAssistant_remove.show()')
-                        guiLoopList.append('window_main.jadeAssistant_launch.show()')
-                        guiLoopList.append('window_status.jadeAssistant_status.setText("Done downloading.")')
-                        versionFileLocation = "./apps/jadeassistant/JadeAssistantVersion.txt"
-                        self.state = "ready"
-
-                    elif self.name == "Jade Apps":
-                        guiLoopList.append('window_status.jadeApps_launch.show()')
-                        guiLoopList.append('window_status.jadeApps_update.hide()')
-                        guiLoopList.append('window_status.jadeApps_download.setEnabled(True)')
-                        guiLoopList.append('window_status.jadeApps_download.setText("Download")')
-                        guiLoopList.append('window_status.jadeApps_download.hide()')
-                        guiLoopList.append('window_status.jadeApps_remove.show()')
-                        guiLoopList.append('window_main.jadeApps_launch.show()')
-                        guiLoopList.append('window_status.jadeApps_status.setText("Done downloading.")')
-                        versionFileLocation = "./apps/jadeapps/JadeAppsVersion.txt"
-                        self.state = "ready"
-
-                    else:
-                        UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
+                    guiLoopList.append(f'{self.button_launch_loop}.show()')
+                    guiLoopList.append(f'{self.button_download_loop}.setEnabled(True)')
+                    guiLoopList.append(f'{self.button_download_loop}.setText("Download")')
+                    guiLoopList.append(f'{self.button_download_loop}.hide()')
+                    guiLoopList.append(f'{self.button_update_loop}.hide()')
+                    guiLoopList.append(f'{self.button_remove_loop}.show()')
+                    guiLoopList.append(f'{self.main_button_launch_loop}.show()')
+                    guiLoopList.append(f'{self.label_status_loop}.setText("Done downloading.")')
+                    self.state = "ready"
                     
                     UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Done downloading {self.name}.")
                     guiLoopList.append(f'UTILITYFuncs.alert("{self.name} was downloaded.", "{self.name} is done downloading.")')
+
                     versionFileName = self.path
                     versionFileName = versionFileName.replace(" ", "")
-                    appVersionFile = open(versionFileLocation, "w")
+                    appVersionFile = open(self.version_file_location, "w")
                     self.version = self.newVersion
                     self.newVersion = self.newVersion.replace(".", "\n")
                     appVersionFile.write(self.newVersion)
@@ -1109,37 +977,17 @@ class App:
 
                     guiLoopList.append(f'window_main.status_bar.setText("{self.name} was downloaded!")')
                     guiLoopList.append('jadeStatus.setStatus("ok")')
-
-                    if self.name == "Jade Assistant":
-                        guiLoopList.append('jadeDots.setDotPercent("jadeAssistantDownload", "Done!")')
-                        guiLoopList.append(f'jadeDots.hideDot("jadeAssistantDownload")')
-
-                    elif self.name == "Jade Apps":
-                        guiLoopList.append('jadeDots.setDotPercent("jadeAppsDownload", "Done!")')
-                        guiLoopList.append('jadeDots.hideDot("jadeAppsDownload")')
-
-                    else:
-                        UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
+                    guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "Done!")')
+                    guiLoopList.append(f'jadeDots.hideDot("{self.dot_name}")')
 
                 except Exception as e:
                     UTILITYFuncs.logAndPrint("WARN", f"App/downloadApp: There was a problem downloading {self.name}! {e}")
                     self.downloadAppVar = False
                     guiLoopList.append(f'UTILITYFuncs.alert("There was a problem!", "There was a problem downloading {self.name}!")')
-
-                    if self.name == "Jade Assistant":
-                        guiLoopList.append('window_status.jadeAssistant_launch.show()')
-                        guiLoopList.append('window_status.jadeAssistant_download.show()')
-                        guiLoopList.append('window_status.jadeAssistant_update.hide()')
-                        guiLoopList.append('window_status.jadeAssistant_remove.show()')
-
-                    elif self.name == "Jade Apps":
-                        guiLoopList.append('window_status.jadeApps_launch.show()')
-                        guiLoopList.append('window_status.jadeApps_download.show()')
-                        guiLoopList.append('window_status.jadeApps_update.hide()')
-                        guiLoopList.append('window_status.jadeApps_remove.show()')
-                    
-                    else:
-                        UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
+                    guiLoopList.append(f'{self.button_launch_loop}.show()')
+                    guiLoopList.append(f'{self.button_download_loop}.show()')
+                    guiLoopList.append(f'{self.button_update_loop}.hide()')
+                    guiLoopList.append(f'{self.button_remove_loop}.show()')
 
             else:
                 sleep(1)
@@ -1153,78 +1001,37 @@ class App:
         global progress_bar
         global selectedApp
         global TruePath
+
         while killThreads == False:
             if self.updateAppVar == True:
                 UTILITYFuncs.logAndPrint("INFO", f"App/updateApp: Updating {self.name}...")
-                if self.name == "Jade Assistant":
-                    guiLoopList.append('window_status.jadeAssistant_launch.hide()')
-                    guiLoopList.append('window_status.jadeAssistant_update.show()')
-                    guiLoopList.append('window_status.jadeAssistant_download.hide()')
-                    guiLoopList.append('window_status.jadeAssistant_remove.hide()')
-                    guiLoopList.append('window_status.jadeAssistant_update.setEnabled(False)')
-                    guiLoopList.append('window_status.jadeAssistant_update.setText("Updating...")')
-
-                elif self.name == "Jade Apps":
-                    guiLoopList.append('window_status.jadeApps_launch.hide()')
-                    guiLoopList.append('window_status.jadeApps_update.show()')
-                    guiLoopList.append('window_status.jadeApps_download.hide()')
-                    guiLoopList.append('window_status.jadeApps_remove.hide()')
-                    guiLoopList.append('window_status.jadeApps_update.setEnabled(False)')
-                    guiLoopList.append('window_status.jadeApps_update.setText("Updating...")')
-
-                else:
-                    UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
-                self.newVersion = self.newVersion.replace("\n", ".")
-
-
-                if platform.system() == "Windows":
-                    end = ".exe"
-
-                elif platform.system() == "Darwin":
-                    end = ""
-
-                else:
-                    UTILITYFuncs.error("You're OS isn't supported! Please use Mac or Windows.")
+                guiLoopList.append(f'{self.button_launch_loop}.hide()')
+                guiLoopList.append(f'{self.button_download_loop}.hide()')
+                guiLoopList.append(f'{self.button_update_loop}.show()')
+                guiLoopList.append(f'{self.button_update_loop}.setEnabled(False)')
+                guiLoopList.append(f'{self.button_update_loop}.setText("Updating...")')
+                guiLoopList.append(f'{self.button_remove_loop}.hide()')
 
                 try:
                     UTILITYFuncs.logAndPrint("INFO", f"App/updateApp: Updating {self.name}...")
-                    if self.name == "Jade Assistant":
-                        guiLoopList.append('jadeDots.showDot("jadeAssistantDownload")')
-                        guiLoopList.append('jadeDots.setDotPercent("jadeAssistantDownload", "Loading...")')
+                    guiLoopList.append(f'jadeDots.showDot("{self.dot_name}")')
+                    guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "Loading...")')
 
-                    elif self.name == "Jade Apps":
-                        guiLoopList.append('jadeDots.showDot("jadeAppsDownload")')
-                        guiLoopList.append('jadeDots.setDotPercent("jadeAppsDownload", "Loading...")')
-
-                    else:
-                        UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
-                    
                     self.state = "updating"
                     guiLoopList.append('jadeStatus.setStatus("load")')
                     
-                    if self.name == "Jade Assistant":
-                        downloadLocation = "./apps/jadeassistant/Jade Assistant.exe"
-                        os.remove(downloadLocation)
-                        self.path = self.path.replace(" ", "%20")
-                        AppDownload = requests.get("https://github.com/nfoert/jadeassistant/raw/main/Jade Assistant.exe", stream=True)
+                    os.remove(self.exe_location)
+                    self.path = self.path.replace(" ", "%20")
 
-                    elif self.name == "Jade Apps":
-                        downloadLocation = "./apps/jadeapps/Jade Apps.exe"
-                        os.remove(downloadLocation)
-                        self.path = self.path.replace(" ", "%20")
-                        AppDownload = requests.get("https://github.com/nfoert/jadeapps/raw/main/Jade Apps.exe", stream=True)
-
-                    else:
-                        UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
-                    
-                    total_size_in_bytes = int(AppDownload.headers.get('content-length', 0))
+                    app_download = requests.get("https://github.com/nfoert/jadeassistant/raw/main/Jade Assistant.exe", stream=True)
+                    total_size_in_bytes = int(app_download.headers.get('content-length', 0))
                     bytes_downloaded = 0
                     last = 0
 
                     self.path = self.path.replace("%20", " ")
                     
-                    with open(downloadLocation, 'wb') as file:
-                        for data in AppDownload.iter_content(1024):
+                    with open(self.exe_location, 'wb') as file:
+                        for data in app_download.iter_content(1024):
                             file.write(data)
                             bytes_downloaded = bytes_downloaded + 1024
                             percent = bytes_downloaded / total_size_in_bytes
@@ -1232,27 +1039,18 @@ class App:
                             percent = round(percent)
                             if last != percent:
                                 last = percent
-                                if self.name == "Jade Assistant":
-                                    guiLoopList.append(f'window_status.jadeAssistant_status.setText("Updating to version {self.newVersion.replace(chr(10), "")}... [{percent}%]")') #chr(10) is a backslash
-                                    guiLoopList.append(f'window_main.status_bar.setText("Updating {self.name} to {self.newVersion.replace(chr(10), "")}... [{percent}%]")')
-                                    guiLoopList.append(f'jadeDots.setDotPercent("jadeAssistantDownload", "[{percent}%]")')
-
-                                elif self.name == "Jade Apps":
-                                    guiLoopList.append(f'window_status.jadeApps_status.setText("Updating to version {self.newVersion.replace(chr(10), "")}... [{percent}%]")')
-                                    guiLoopList.append(f'window_main.status_bar.setText("Updating {self.name} to {self.newVersion.replace(chr(10), "")}... [{percent}%]")')
-                                    guiLoopList.append(f'jadeDots.setDotPercent("jadeAppsDownload", "[{percent}%]")')
-                                
-                                else:
-                                    UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
+                                guiLoopList.append(f'{self.label_status_loop}.setText("Updating to version {self.newVersion.replace(chr(10), "")}... [{percent}%]")') #chr(10) is a backslash
+                                guiLoopList.append(f'window_main.status_bar.setText("Updating {self.name} to {self.newVersion.replace(chr(10), "")}... [{percent}%]")')
+                                guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "[{percent}%]")')
 
                             else:
                                 continue
                         
-                        AppDownload.close()
+                        app_download.close()
                         file.close()
 
                         if platform.system() == "Darwin":
-                            os.system('chmod 775 "Jade Apps"')
+                            os.system(f'chmod 775 "{TruePath}{self.name}"')
 
                         else:
                             UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Not Chmodding.")
@@ -1260,89 +1058,38 @@ class App:
                     self.updateAppVar = False
                     self.state = "ready"
 
-                    if self.name == "Jade Assistant":
-                        guiLoopList.append('window_status.jadeAssistant_launch.show()')
-                        guiLoopList.append('window_status.jadeAssistant_update.hide()')
-                        guiLoopList.append('window_status.jadeAssistant_download.hide()')
-                        guiLoopList.append('window_status.jadeAssistant_remove.show()')
-                        guiLoopList.append('window_main.jadeAssistant_launch.show()')
-                        guiLoopList.append('window_status.jadeAssistant_status.setText("Done updating.")')
-
-                    elif self.name == "Jade Apps":
-                        guiLoopList.append('window_status.jadeApps_launch.show()')
-                        guiLoopList.append('window_status.jadeApps_update.hide()')
-                        guiLoopList.append('window_status.jadeApps_download.hide()')
-                        guiLoopList.append('window_status.jadeApps_remove.show()')
-                        guiLoopList.append('window_main.jadeApps_launch.show()')
-                        guiLoopList.append('window_status.jadeApps_status.setText("Done updating.")')
-
-                    else:
-                        UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
-
+                    guiLoopList.append(f'{self.button_launch_loop}.show()')
+                    guiLoopList.append(f'{self.button_download_loop}.hide()')
+                    guiLoopList.append(f'{self.button_update_loop}.hide()')
+                    guiLoopList.append(f'{self.button_remove_loop}.show()')
+                    guiLoopList.append(f'{self.label_status_loop}.setText("Done updating.")')
 
                     UTILITYFuncs.logAndPrint("INFO", f"App/updateApp: Done updating {self.name}. Writing version file...")
 
-                    if self.name == "Jade Assistant":
-                        versionFileName = self.path
-                        versionFileName = versionFileName.replace(" ", "")
-                        appVersionFile = open("./apps/jadeassistant/JadeAssistantVersion.txt", "w")
-                        print(appVersionFile.name)
-                        print(versionFileName)
-                        self.version = self.newVersion
-                        self.newVersion = self.newVersion.replace(".", "\n")
-                        appVersionFile.write(self.newVersion)
-                        appVersionFile.close()
+                    versionFileName = self.path
+                    versionFileName = versionFileName.replace(" ", "")
+                    appVersionFile = open(self.version_file_location, "w")
+                    self.version = self.newVersion
+                    self.newVersion = self.newVersion.replace(".", "\n")
+                    appVersionFile.write(self.newVersion)
+                    appVersionFile.close()
 
-                        guiLoopList.append(f'window_main.status_bar.setText("{self.name} was updated to {self.newVersion.replace(chr(10), "")}")') #chr(10) is a backslash
-                        guiLoopList.append(f'jadeDots.setDotPercent("jadeAssistantDownload", "Done!")')
-                        guiLoopList.append(f'jadeDots.hideDot("jadeAssistantDownload")')
-                        guiLoopList.append('jadeStatus.setStatus("ok")')
-
-                    elif self.name == "Jade Apps":
-                        versionFileName = self.path
-                        versionFileName = versionFileName.replace(" ", "")
-                        appVersionFile = open("./apps/jadeapps/JadeAppsVersion.txt", "w")
-                        print(appVersionFile.name)
-                        print(versionFileName)
-                        self.version = self.newVersion
-                        self.newVersion = self.newVersion.replace(".", "\n")
-                        appVersionFile.write(self.newVersion)
-                        appVersionFile.close()
-
-                        guiLoopList.append(f'window_main.status_bar.setText("Jade Apps was updated to {self.newVersion.replace(chr(10), "")}.")')
-                        guiLoopList.append('jadeDots.setDotPercent("jadeAppsDownload", "Done!")')
-                        guiLoopList.append('jadeDots.hideDot("jadeAppsDownload")')
-                        guiLoopList.append('jadeStatus.setStatus("ok")')
-
-                    else:
-                        UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
-
-
-                    sleep(5)
+                    guiLoopList.append(f'window_main.status_bar.setText("{self.name} was updated to {self.newVersion.replace(chr(10), "")}")') #chr(10) is a backslash
+                    guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "Done!")')
+                    guiLoopList.append(f'jadeDots.hideDot("{self.dot_name}")')
+                    guiLoopList.append('jadeStatus.setStatus("ok")')
 
                 except Exception as e:
                     UTILITYFuncs.logAndPrint("WARN", f"App/updateApp: There was a problem updating {self.name}! {e}")
                     self.updateAppVar = False
                     guiLoopList.append(f'UTILITYFuncs.alert("There was a problem!", "There was a problem updating {self.name}!")')
-                    if self.name == "Jade Assistant":
-                        guiLoopList.append('window_status.jadeAssistant_launch.show()')
-                        guiLoopList.append('window_status.jadeAssistant_update.show()')
-                        guiLoopList.append('window_status.jadeAssistant_download.hide()')
-                        guiLoopList.append('window_status.jadeAssistant_update.setEnabled(True)')
-                        guiLoopList.append('window_status.jadeAssistant_update.setText("Update")')
-                        guiLoopList.append('window_status.jadeAssistant_remove.show()')
+                    guiLoopList.append(f'{self.button_launch_loop}.show()')
+                    guiLoopList.append(f'{self.button_download_loop}.hide()')
+                    guiLoopList.append(f'{self.button_update_loop}.show()')
+                    guiLoopList.append(f'{self.button_update_loop}.setEnabled(True)')
+                    guiLoopList.append(f'{self.button_update_loop}.setText("Update")')
+                    guiLoopList.append(f'{self.button_remove_loop}.show()')
 
-                    elif self.name == "Jade Apps":
-                        guiLoopList.append('window_status.jadeApps_launch.show()')
-                        guiLoopList.append('window_status.jadeApps_update.show()')
-                        guiLoopList.append('window_status.jadeApps_download.hide()')
-                        guiLoopList.append('window_status.jadeApps_update.setEnabled(True)')
-                        guiLoopList.append('window_status.jadeApps_update.setText("Update")')
-                        guiLoopList.append('window_status.jadeApps_remove.show()')
-
-                    else:
-                        UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
-                
 
             else:
                 sleep(1)
@@ -1353,37 +1100,24 @@ class App:
         try:
             if platform.system() == "Windows":
                 os.system(f'taskkill /F /IM "{self.path}.exe"')
-                if self.name == "Jade Assistant":
-                    os.remove("./apps/jadeassistant/Jade Assistant.exe")
-                    guiLoopList.append('window_status.jadeAssistant_launch.hide()')
-                    guiLoopList.append('window_status.jadeAssistant_update.hide()')
-                    guiLoopList.append('window_status.jadeAssistant_download.show()')
-                    guiLoopList.append('window_status.jadeAssistant_remove.hide()')
-                    guiLoopList.append('window_main.jadeAssistant_launch.hide()')
-                    guiLoopList.append('window_status.jadeAssistant_status.setText("Removed.")')
-                    UTILITYFuncs.alert("Jade Assistant was removed.", "You just deleted Jade Assistant.")
-
-                elif self.name == "Jade Apps":
-                    os.remove("./apps/jadeapps/Jade Apps.exe")
-                    guiLoopList.append('window_status.jadeApps_launch.hide()')
-                    guiLoopList.append('window_status.jadeApps_update.hide()')
-                    guiLoopList.append('window_status.jadeApps_download.show()')
-                    guiLoopList.append('window_status.jadeApps_remove.hide()')
-                    guiLoopList.append('window_main.jadeApps_launch.hide()')
-                    guiLoopList.append('window_status.jadeApps_status.setText("Removed.")')
-                    UTILITYFuncs.alert("Jade Apps was removed.", "You just deleted Jade Apps.")
-
-                else:
-                    UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
+                os.remove(self.exe_location)
+                guiLoopList.append(f'{self.button_launch_loop}.hide()')
+                guiLoopList.append(f'{self.button_download_loop}.show()')
+                guiLoopList.append(f'{self.button_update_loop}.hide()')
+                guiLoopList.append(f'{self.button_remove_loop}.hide()')
+                guiLoopList.append(f'{self.main_button_launch_loop}.hide()')
+                guiLoopList.append(f'{self.label_status_loop}.setText("Removed.")')
+                UTILITYFuncs.alert(f"{self.name} was removed.", f"You just deleted {self.name}.")
 
             elif platform.system() == "Darwin":
                 os.system(f'killall "{self.path}"')
-                os.remove("Jade Assistant")
-                guiLoopList.append('window_status.jadeAssistant_launch.hide()')
-                guiLoopList.append('window_status.jadeAssistant_update.hide()')
-                guiLoopList.append('window_status.jadeAssistant_download.show()')
-                guiLoopList.append('window_status.jadeAssistant_remove.hide()')
-                UTILITYFuncs.alert("Jade Assistant was removed.", "You just deleted Jade Assistant.")
+                os.remove(self.path)
+                guiLoopList.append(f'{self.button_launch_loop}.hide()')
+                guiLoopList.append(f'{self.button_download_loop}.show()')
+                guiLoopList.append(f'{self.button_update_loop}.hide()')
+                guiLoopList.append(f'{self.button_remove_loop}.hide()')
+                guiLoopList.append(f'{self.main_button_launch_loop}.hide()')
+                UTILITYFuncs.alert(f"{self.name} was removed.", f"You just deleted {self.name}.")
 
             else:
                 UTILITYFuncs.logAndPrint("INFO", "UIFuncs/removeApp: Your OS isn't supported! Please use Mac or Windows.")
@@ -1404,224 +1138,104 @@ class App:
         appname = appname.replace(" ", "")
         AppMac = Path(f"{TruePath}{self.path}").exists()
 
-        if self.name == "Jade Assistant":
-            AppExists = Path("./apps/jadeassistant/Jade Assistant.exe").exists()
-
-        elif self.name == "Jade Apps":
-            AppExists = Path("./apps/jadeapps/Jade Apps.exe").exists()
-
-        else:
-            UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
-        
+        AppExists = Path(self.exe_location).exists()
 
         try:
-            if self.name == "Jade Assistant":
-                AppVersionFromServer = requests.get("https://nfoert.pythonanywhere.com/jadeAssistant/jadeAssistantVersion")
-                AppVersionFromServer.raise_for_status()
-
-            elif self.name == "Jade Apps":
-                AppVersionFromServer = requests.get("https://nfoert.pythonanywhere.com/jadeapps/jadeAppsVersion")
-                AppVersionFromServer.raise_for_status()
-
-            else:
-                UTILITYFuncs.error(f"App name not recognised! '{self.name}'")
+            version_request = requests.get(self.version_url)
+            version_request.raise_for_status()
 
         except Exception as e:
             UTILITYFuncs.logAndPrint("WARN", f"App/checkForUpdates: There was a problem checking {self.name} for updates! {e}")
             self.state = "ready"
             return False
 
-        fsMAJOR = UTILITYFuncs.substring(AppVersionFromServer.text, "major=", ",minor")
-        fsMINOR = UTILITYFuncs.substring(AppVersionFromServer.text, "minor=", ",patch")
-        fsPATCH = UTILITYFuncs.substring(AppVersionFromServer.text, "patch=", "&")
-        self.newVersion = f"{fsMAJOR}.{fsMINOR}.{fsPATCH}"
+        server_version_major = UTILITYFuncs.substring(version_request.text, "major=", ",minor")
+        server_version_minor = UTILITYFuncs.substring(version_request.text, "minor=", ",patch")
+        server_version_patch = UTILITYFuncs.substring(version_request.text, "patch=", "&")
+        self.newVersion = f"{server_version_major}.{server_version_minor}.{server_version_patch}"
         
-        if self.name == "Jade Assistant":
-            UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: App is Jade Assistant!")
-            if AppExists == True or AppMac == True:
-                UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: {self.name} exists!")
-                window_main.jadeAssistant_launch.show()
-                # It exists! Now check for existance of version file
+        if AppExists == True or AppMac == True:
+            UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: {self.name} exists!")
 
-                window_status.jadeAssistant_launch.show()
-                window_status.jadeAssistant_update.hide()
-                window_status.jadeAssistant_download.hide()
-                window_status.jadeAssistant_remove.show()
-                
-                
-                versionFile = self.path
-                versionFile = versionFile.replace(" ", "")
-                AppVersionFileExists = Path("./apps/jadeassistant/JadeAssistantVersion.txt").exists()
-                if AppVersionFileExists == True:
-                    #It exists! Now check for updates
-                    UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Checking for updates for Jade Assistant!")
-                    versionFileName = self.path.replace(" ", "")
-                    AppVersionFile = open("./apps/jadeassistant/JadeAssistantVersion.txt", "r")
-                    AppVersionFileContents = AppVersionFile.readlines()
-                    AppVersion_MAJOR = AppVersionFileContents[0]
-                    AppVersion_MINOR = AppVersionFileContents[1]
-                    AppVersion_PATCH =AppVersionFileContents[2]
-                    AppVersion = f"{AppVersion_MAJOR}.{AppVersion_MINOR}.{AppVersion_PATCH}"
-                    NewVersion = f"{fsMAJOR}.{fsMINOR}.{fsPATCH}"
-                    AppVersion = AppVersion.replace("\n", "")
-                    self.version = NewVersion
+            self.button_launch.show()
+            self.button_download.hide()
+            self.button_update.hide()
+            self.button_remove.show()
+            self.main_button_launch.show()
+            
+            AppVersionFileExists = Path(self.version_file_location).exists()
+            if AppVersionFileExists == True:
+                #It exists! Now check for updates
+                UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Checking for updates for {self.name}!")
+                version_file = open(self.version_file_location, "r")
+                version_file_contents = version_file.readlines()
 
-                    if AppVersion_MAJOR < fsMAJOR:
-                        # Updates required
-                        self.state = "update"
-                        window_status.jadeAssistant_launch.show()
-                        window_status.jadeAssistant_update.show()
-                        window_status.jadeAssistant_download.hide()
-                        window_status.jadeAssistant_remove.show()
-                        UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates required. {AppVersion_MAJOR} < {fsMAJOR}")
-                        UTILITYFuncs.alert(f"{self.name} Update Avaliable.", f"Open {self.name}'s menu to update to version {NewVersion}.")
+                local_version_major = version_file_contents[0]
+                local_version_minor = version_file_contents[1]
+                local_version_patch = version_file_contents[2]
 
-                    elif AppVersion_MINOR < fsMINOR:
-                        # Updates required
-                        self.state = "update"
-                        window_status.jadeAssistant_launch.show()
-                        window_status.jadeAssistant_update.show()
-                        window_status.jadeAssistant_download.hide()
-                        window_status.jadeAssistant_remove.show()
-                        UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates required. {AppVersion_MINOR} < {fsMINOR}")
-                        UTILITYFuncs.alert(f"{self.name} Update Avaliable.", f"Open {self.name}'s menu to update to version {NewVersion}.")
+                AppVersion = f"{local_version_major}.{local_version_minor}.{local_version_patch}"
+                NewVersion = f"{server_version_major}.{server_version_minor}.{server_version_patch}"
+                AppVersion = AppVersion.replace("\n", "")
+                self.version = NewVersion
 
-                    elif AppVersion_PATCH < fsPATCH:
-                        # Updates required
-                        self.state = "update"
-                        window_status.jadeAssistant_launch.show()
-                        window_status.jadeAssistant_update.show()
-                        window_status.jadeAssistant_download.hide()
-                        window_status.jadeAssistant_remove.show()
-                        UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates required. {AppVersion_PATCH} < {fsPATCH}")
-                        UTILITYFuncs.alert(f"{self.name} Update Avaliable.", f"Open {self.name}'s menu to update to version {NewVersion}.")
+                if local_version_major < server_version_major:
+                    self.state = "update"
+                    self.button_launch.show()
+                    self.button_download.hide()
+                    self.button_update.show()
+                    self.button_remove.show()
+                    UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates required. {local_version_major} < {server_version_major}")
+                    UTILITYFuncs.alert(f"{self.name} Update Avaliable.", f"Open {self.name}'s menu to update to version {NewVersion}.")
 
-                    else:
-                        # Updates not required
-                        self.state = "ready"
-                        window_status.jadeAssistant_launch.show()
-                        window_status.jadeAssistant_update.hide()
-                        window_status.jadeAssistant_download.hide()
-                        window_status.jadeAssistant_remove.show()
-                        UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Updates not required for Jade Assistant")
+                elif local_version_minor < server_version_minor:
+                    self.state = "update"
+                    self.button_launch.show()
+                    self.button_download.hide()
+                    self.button_update.show()
+                    self.button_remove.show()
+                    UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates required. {local_version_minor} < {server_version_minor}")
+                    UTILITYFuncs.alert(f"{self.name} Update Avaliable.", f"Open {self.name}'s menu to update to version {NewVersion}.")
+
+                elif local_version_patch < server_version_patch:
+                    self.state = "update"
+                    self.button_launch.show()
+                    self.button_download.hide()
+                    self.button_update.show()
+                    self.button_remove.show()
+                    UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates required. {local_version_patch} < {server_version_patch}")
+                    UTILITYFuncs.alert(f"{self.name} Update Avaliable.", f"Open {self.name}'s menu to update to version {NewVersion}.")
 
                 else:
                     self.state = "ready"
-                    window_status.jadeAssistant_launch.show()
-                    window_status.jadeAssistant_update.hide()
-                    window_status.jadeAssistant_download.hide()
-                    window_status.jadeAssistant_remove.show()
-                    UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Version file does not exist for Jade Assistant")
-                            
-
-            elif AppExists == False or AppMac == False:
-                # It dosen't exist! Show button for downloading.
-                UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Jade Assistant dosen't exist!")
-                self.state = "download"
-                window_status.jadeAssistant_launch.hide()
-                window_status.jadeAssistant_update.hide()
-                window_status.jadeAssistant_download.show()
-                window_status.jadeAssistant_remove.hide()
+                    self.button_launch.show()
+                    self.button_download.hide()
+                    self.button_update.hide()
+                    self.button_remove.show()
+                    UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates not required for {self.name}.")
 
             else:
-                #Unable to tell if it exists or not
-                UTILITYFuncs.logAndPrint("WARN", "App/checkForUpdates: Unable to tell if Jade Assistant exists or not.")
-                UTILITYFuncs.error("Unable to tell if Jade Assistant exists or not!")
+                self.state = "ready"
+                self.button_launch.show()
+                self.button_download.hide()
+                self.button_update.hide()
+                self.button_remove.show()
+                UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Version file does not exist for {self.name}.")
+                        
 
-        elif self.name == "Jade Apps":
-            UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: App is Jade Apps!")
-            if AppExists == True or AppMac == True:
-                UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Jade Apps exists!")
-                window_main.jadeApps_launch.show()
-                # It exists! Now check for existance of version file
-
-                window_status.jadeApps_launch.show()
-                window_status.jadeApps_update.hide()
-                window_status.jadeApps_download.hide()
-                window_status.jadeApps_remove.show()
-                
-                
-                versionFile = self.path
-                versionFile = versionFile.replace(" ", "")
-                AppVersionFileExists = Path("./apps/jadeapps/JadeAppsVersion.txt").exists()
-                if AppVersionFileExists == True:
-                    #It exists! Now check for updates
-                    UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Checking for updates for Jade Apps!")
-                    versionFileName = self.path.replace(" ", "")
-                    AppVersionFile = open("./apps/jadeapps/JadeAppsVersion.txt", "r")
-                    AppVersionFileContents = AppVersionFile.readlines()
-                    AppVersion_MAJOR = AppVersionFileContents[0]
-                    AppVersion_MINOR = AppVersionFileContents[1]
-                    AppVersion_PATCH =AppVersionFileContents[2]
-                    AppVersion = f"{AppVersion_MAJOR}.{AppVersion_MINOR}.{AppVersion_PATCH}"
-                    NewVersion = f"{fsMAJOR}.{fsMINOR}.{fsPATCH}"
-                    AppVersion = AppVersion.replace("\n", "")
-                    self.version = NewVersion
-
-                    if AppVersion_MAJOR < fsMAJOR:
-                        # Updates required
-                        self.state = "update"
-                        window_status.jadeApps_launch.show()
-                        window_status.jadeApps_update.show()
-                        window_status.jadeApps_download.hide()
-                        window_status.jadeApps_remove.show()
-                        UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates required. {AppVersion_MAJOR} < {fsMAJOR}")
-                        UTILITYFuncs.alert(f"{self.name} Update Avaliable.", f"Open {self.name}'s menu to update to version {NewVersion}.")
-
-                    elif AppVersion_MINOR < fsMINOR:
-                        # Updates required
-                        self.state = "update"
-                        window_status.jadeApps_launch.show()
-                        window_status.jadeApps_update.show()
-                        window_status.jadeApps_download.hide()
-                        window_status.jadeApps_remove.show()
-                        UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates required. {AppVersion_MINOR} < {fsMINOR}")
-                        UTILITYFuncs.alert(f"{self.name} Update Avaliable.", f"Open {self.name}'s menu to update to version {NewVersion}.")
-
-                    elif AppVersion_PATCH < fsPATCH:
-                        # Updates required
-                        self.state = "update"
-                        window_status.jadeApps_launch.show()
-                        window_status.jadeApps_update.show()
-                        window_status.jadeApps_download.hide()
-                        window_status.jadeApps_remove.show()
-                        UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: Updates required. {AppVersion_PATCH} < {fsPATCH}")
-                        UTILITYFuncs.alert(f"{self.name} Update Avaliable.", f"Open {self.name}'s menu to update to version {NewVersion}.")
-
-                    else:
-                        # Updates not required
-                        self.state = "ready"
-                        window_status.jadeApps_launch.show()
-                        window_status.jadeApps_update.hide()
-                        window_status.jadeApps_download.hide()
-                        window_status.jadeApps_remove.show()
-                        UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Updates not required for Jade Apps")
-
-                else:
-                    self.state = "ready"
-                    window_status.jadeApps_launch.show()
-                    window_status.jadeApps_update.hide()
-                    window_status.jadeApps_download.hide()
-                    window_status.jadeApps_remove.show()
-                    UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Version file does not exist for Jade Apps")
-                            
-
-            elif AppExists == False or AppMac == False:
-                # It dosen't exist! Show button for downloading.
-                UTILITYFuncs.logAndPrint("INFO", "App/checkForUpdates: Jade Apps dosen't exist!")
-                self.state = "download"
-                window_status.jadeApps_launch.hide()
-                window_status.jadeApps_update.hide()
-                window_status.jadeApps_download.show()
-                window_status.jadeApps_remove.hide()
-
-            else:
-                #Unable to tell if it exists or not
-                UTILITYFuncs.logAndPrint("WARN", "App/checkForUpdates: Unable to tell if Jade Apps exists or not.")
-                UTILITYFuncs.error("Unable to tell if Jade Apps exists or not!")
+        elif AppExists == False or AppMac == False:
+            # It dosen't exist! Show button for downloading.
+            UTILITYFuncs.logAndPrint("INFO", f"App/checkForUpdates: {self.name} dosen't exist!")
+            self.state = "download"
+            self.button_launch.hide()
+            self.button_download.show()
+            self.button_update.hide()
+            self.button_remove.hide()
 
         else:
-            UTILITYFuncs.error(f"App '{self.name}' not recognised!")
+            #Unable to tell if it exists or not
+            UTILITYFuncs.logAndPrint("WARN", f"App/checkForUpdates: Unable to tell if {self.name} exists or not.")
+            UTILITYFuncs.error(f"Unable to tell if {self.name} exists or not!")
 
 
 
@@ -2324,8 +1938,13 @@ class MAINFuncs:
 
         else:
             UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/loadJadeLauncher: The Jade Launcher update does not exist.")
-            window_status.jadeLauncher_download.show()
-            window_status.jadeLauncher_install.hide()
+            if update == "yes":
+                window_status.jadeLauncher_download.show()
+                window_status.jadeLauncher_install.hide()
+
+            else:
+                window_status.jadeLauncher_download.hide()
+                window_status.jadeLauncher_install.hide()
 
         # Check for suspension
         if myAccount.suspended == "no":
@@ -2341,7 +1960,7 @@ class MAINFuncs:
 
             intro_pix = intro_pix.scaled(519, 344) #Scale down the intro screen so it's not so big
 
-            introConfig = jadeConfig.getValue("intro")
+            introConfig = jadelauncher_config.getValue("intro")
             if introConfig == "true":
                 UTILITYFuncs.logAndPrint("INFO", "Showing the intro!")
                 intro_splash = QtWidgets.QSplashScreen(intro_pix, QtCore.Qt.WindowStaysOnTopHint)
@@ -2380,7 +1999,7 @@ class MAINFuncs:
                 UTILITYFuncs.error("The value set for 'intro' in the config was not recognized!")
 
             
-            newScreen = jadeConfig.getValue("new")
+            newScreen = jadelauncher_config.getValue("new")
             if platform.system() == "Windows":
                 if newScreen == "true":
                     window_new.show()
@@ -2757,8 +2376,8 @@ class UIFuncs:
 
     def settingsButton():
         # Get values
-        introConfig = jadeConfig.getValue("intro")
-        newConfig = jadeConfig.getValue("new")
+        introConfig = jadelauncher_config.getValue("intro")
+        newConfig = jadelauncher_config.getValue("new")
 
         # Set checkboxes
         if introConfig == "true":
@@ -2786,16 +2405,16 @@ class UIFuncs:
     def saveSettings():
         UTILITYFuncs.logAndPrint("INFO", "Saving settings...")
         if window_settings.intro.isChecked():
-            jadeConfig.setValue("intro", "true")
+            jadelauncher_config.setValue("intro", "true")
 
         else:
-            jadeConfig.setValue("intro", "false")
+            jadelauncher_config.setValue("intro", "false")
 
         if window_settings.newScreen.isChecked():
-            jadeConfig.setValue("new", "true")
+            jadelauncher_config.setValue("new", "true")
 
         else:
-            jadeConfig.setValue("new", "false")
+            jadelauncher_config.setValue("new", "false")
 
         window_settings.hide()
         UTILITYFuncs.logAndPrint("INFO", "Done saving settings.")
@@ -2821,7 +2440,7 @@ class UIFuncs:
     def getStartedNew():
         if window_new.showAgain.isChecked():
             UTILITYFuncs.logAndPrint("INFO", "UIFuncs/getStartedNew: Set the value for showing the new screen to false.")
-            jadeConfig.setValue("new", "false")
+            jadelauncher_config.setValue("new", "false")
 
         else:
             UTILITYFuncs.logAndPrint("INFO", "UIFuncs/getStartedNew: Not effecting the config value for the what's new screen.")
@@ -2859,8 +2478,23 @@ class UIFuncs:
             UTILITYFuncs.logAndPrint("INFO", "Opening the uninstall utility...")
             window_settings.hide()
             window_main.hide()
-            subprocess.Popen("./unins000.exe")
-            sys.exit()
+            try:
+                subprocess.Popen("./unins000.exe")
+                sys.exit()
+
+            except FileNotFoundError:
+                UTILITYFuncs.logAndPrint("WARN", "Unable to find the uninstall script!")
+                dlg = QtWidgets.QMessageBox()
+                dlg.setWindowTitle("Jade Launcher | Uninstall")
+                dlg.setText("Unable to locate the uninstall script.")
+                dlg.setStandardButtons(QtWidgets.QMessageBox.Ok )
+                dlg.setIcon(QtWidgets.QMessageBox.Warning)
+                button = dlg.exec()
+                
+                if button == QtWidgets.QMessageBox.Ok:
+                    UTILITYFuncs.logAndPrint("INFO", "Quitting...")
+                    sys.exit()
+            
         else:
             UTILITYFuncs.logAndPrint("INFO", "Not uninstalling the Jade Launcher.")
         
@@ -3362,20 +2996,74 @@ if doMain == True:
 
     Launcher = LauncherId("loading", "loading")
 
+    jade_assistant_dict = {
+        "name": "Jade Assistant",
+        "description": "Jade Assistant is a virtual assistant designed to help you make the most out of your day by providing information from a variety of sources including Jade Apps, and being able to open apps for you.",
+        "path": "Jade Assistant",
+        "version": "Loading...",
+        "download_folder": "./apps/jadeassistant",
+        "download_url": "https://github.com/nfoert/jadeassistant/raw/main/Jade%20Assistant.exe",
+        "exe_location": "./apps/jadeassistant/Jade Assistant.exe",
+        "version_file_location": "./apps/jadeassistant/JadeAssistantVersion.txt",
+        "version_url": "https://nfoert.pythonanywhere.com/jadeAssistant/jadeAssistantVersion",
+        "dot_name": "jadeAssistantDownload",
+        "button_launch": window_status.jadeAssistant_launch,
+        "button_download": window_status.jadeAssistant_download,
+        "button_update": window_status.jadeAssistant_update,
+        "button_remove": window_status.jadeAssistant_remove,
+        "label_status": window_status.jadeAssistant_status,
+        "label_version": window_status.jadeAssistant_version,
+        "main_button_launch": window_main.jadeAssistant_launch,
+        "button_launch_loop": "window_status.jadeAssistant_launch",
+        "button_download_loop": "window_status.jadeAssistant_download",
+        "button_update_loop": "window_status.jadeAssistant_update",
+        "button_remove_loop": "window_status.jadeAssistant_remove",
+        "label_status_loop": "window_status.jadeAssistant_status",
+        "label_version_loop": "window_status.jadeAssistant_version",
+        "main_button_launch_loop": "window_main.jadeAssistant_launch",
+    }
+
+    jade_apps_dict = {
+        "name": "Jade Apps",
+        "description": "Jade Apps is the ultimate collection of small applets that are integrated into Jade Assistant allowing you to get lots of information about different topics.",
+        "path": "Jade Apps",
+        "version": "Loading...",
+        "download_folder": "./apps/jadeapps",
+        "download_url": "https://github.com/nfoert/jadeapps/raw/main/Jade%20Apps.exe",
+        "exe_location": "./apps/jadeapps/Jade Apps.exe",
+        "version_file_location": "./apps/jadeapps/JadeAppsVersion.txt",
+        "version_url": "https://nfoert.pythonanywhere.com/jadeapps/jadeAppsVersion",
+        "dot_name": "jadeAppsDownload",
+        "button_launch": window_status.jadeApps_launch,
+        "button_download": window_status.jadeApps_download,
+        "button_update": window_status.jadeApps_update,
+        "button_remove": window_status.jadeApps_remove,
+        "label_status": window_status.jadeApps_status,
+        "label_version": window_status.jadeApps_version,
+        "main_button_launch": window_main.jadeApps_launch,
+        "button_launch_loop": "window_status.jadeApps_launch",
+        "button_download_loop": "window_status.jadeApps_download",
+        "button_update_loop": "window_status.jadeApps_update",
+        "button_remove_loop": "window_status.jadeApps_remove",
+        "label_status_loop": "window_status.jadeApps_status",
+        "label_version_loop": "window_status.jadeApps_version",
+        "main_button_launch_loop": "window_main.jadeApps_launch",
+    }
+
     JadeAssistantDescription = "Jade is a virtual assistant for your computer's desktop designed to be as helpful as possible, while being able to change size to fit your workflow."
     JadeAppsDescription = "Jade Apps is the ultimate hub for information and tasks that is integrated into Jade Assistant"
 
-    JadeAssistant = App("Jade Assistant", JadeAssistantDescription, "Jade Assistant", "Loading...")
-    JadeApps = App("Jade Apps", JadeAppsDescription, "Jade Apps", "Loading...")
+    JadeAssistant = App(jade_assistant_dict)
+    JadeApps = App(jade_apps_dict)
 
     firstGC = UTILITYFuncs.getConnection("main")
     if firstGC == True:
         
-        jadeConfig.init(UTILITYFuncs)
+        jadelauncher_config = config.Config("jadeLauncherConfig")
         MAINFuncs.mainCode()
 
     elif firstGC == False:
-        jadeConfig.init(UTILITYFuncs)
+        jadelauncher_config = config.Config("jadeLauncherConfig")
 
     JadeAssistant_UpdateThread = threading.Thread(target=JadeAssistant.updateApp, daemon=True)
     JadeAssistant_DownloadThread = threading.Thread(target=JadeAssistant.downloadApp, daemon=True)
