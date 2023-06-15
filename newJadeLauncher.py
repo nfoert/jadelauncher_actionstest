@@ -68,7 +68,7 @@ else:
 
 Version_MAJOR = 2
 Version_MINOR = 1
-Version_PATCH = 0
+Version_PATCH = 1
 debug = False
 debugOpenAllWindows = False
 
@@ -1960,7 +1960,13 @@ class MAINFuncs:
 
             intro_pix = intro_pix.scaled(519, 344) #Scale down the intro screen so it's not so big
 
-            introConfig = jadelauncher_config.getValue("intro")
+            try:
+                introConfig = jadelauncher_config.getValue("intro")
+            
+            except config.UnableToGetValue:
+                jadelauncher_config.setValue("intro", "true")
+                introConfig = "true"
+
             if introConfig == "true":
                 UTILITYFuncs.logAndPrint("INFO", "Showing the intro!")
                 intro_splash = QtWidgets.QSplashScreen(intro_pix, QtCore.Qt.WindowStaysOnTopHint)
@@ -1998,8 +2004,13 @@ class MAINFuncs:
             else:
                 UTILITYFuncs.error("The value set for 'intro' in the config was not recognized!")
 
-            
-            newScreen = jadelauncher_config.getValue("new")
+            try:
+                newScreen = jadelauncher_config.getValue("new")
+
+            except config.UnableToGetValue:
+                jadelauncher_config.setValue("new", "true")
+                newScreen = "true"
+
             if platform.system() == "Windows":
                 if newScreen == "true":
                     window_new.show()
