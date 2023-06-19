@@ -1,0 +1,13 @@
+.venv
+apps
+Output
+Tests
+account.txt
+id.txt
+JadeAppsVersion.txt
+jadeLauncherConfig.bak
+jadeLauncherConfig.dat
+jadeLauncherConfig.dir
+JadeLauncherLog.txt
+magic.mp3
+pyinstall.py
