@@ -75,7 +75,6 @@ debugOpenAllWindows = False
 Version_TOTAL = f"{Version_MAJOR}.{Version_MINOR}.{Version_PATCH}"
 SignedIn = False
 LauncherIdVar = "Loading..."
-expanded = "0"
 
 guiLoopList = []
 killThreads = False
@@ -2283,24 +2282,6 @@ class UIFuncs:
         window_main.show()
         dialog_accountSuspended.hide()
 
-    def expandNews1():
-        global news1
-        global expanded
-        expanded = "1"
-        news1.expand()
-
-    def expandNews2():
-        global news2
-        global expanded
-        expanded = "2"
-        news2.expand()
-
-    def expandNews3():
-        global news3
-        global expanded
-        expanded = "3"
-        news3.expand()
-
     def openChangelog():
         if platform.system() == "Windows":
             WEBVIEW.openWebView("https://nofoert.wixsite.com/jade/blog/categories/changelogs")
@@ -2310,28 +2291,6 @@ class UIFuncs:
 
         else:
             UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
-
-    #Expanded news
-    def openUrlButton():
-        global expanded
-        global news1
-        global news2
-        global news3
-
-        if expanded == "0":
-            UTILITYFuncs.logAndPrint("WARN", "UIFuncs/openUrlButton: There was a problem expanding news. Nothing is actually expanded?")
-
-        elif expanded == "1":
-            news1.openUrl()
-
-        elif expanded == "2":
-            news2.openUrl()
-
-        elif expanded == "3":
-            news3.openUrl()
-
-        else:
-            UTILITYFuncs.logAndPrint("WARN", "UIFuncs/openUrlButton: There was a problem determining what news article to open a url for.")
 
     def quitErrorDialog():
         global killThreads
@@ -2937,9 +2896,6 @@ window_offline.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
 window_main.account_button.clicked.connect(UIFuncs.openAccountScreen)
 #window_main.leftBox_jadeBarButton.clicked.connect(UIFuncs.openJadeBar)
 #window_main.leftBox_plusButton.clicked.connect(UIFuncs.openPlus)
-window_main.button1.clicked.connect(UIFuncs.expandNews1)
-window_main.button2.clicked.connect(UIFuncs.expandNews2)
-window_main.button3.clicked.connect(UIFuncs.expandNews3)
 window_main.changelogsButton.clicked.connect(UIFuncs.openChangelog)
 window_main.statusButton.clicked.connect(UIFuncs.openStatus)
 window_main.jadeAssistant_status.clicked.connect(UIFuncs.openStatus)
