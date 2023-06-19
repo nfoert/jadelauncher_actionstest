@@ -4,6 +4,12 @@ import sys
 from time import sleep
 import os
 import subprocess
+import playsound
+
+# Enter the name of your spec file here:
+specfile_windows = "newJadeLauncherWINDOWS.spec"
+specfile_mac = "newJadeLauncherMAC.spec"
+# -------------------------------------
 
 print(f"{Fore.YELLOW}--------------------------------------------------------------------------")
 print(f"{Fore.MAGENTA}                _          _____       _           _        _ _            ")
@@ -14,6 +20,7 @@ print(f"{Fore.MAGENTA}  / ____ \ |_| | || (_) | | |   | |_| | | | | \__ \ || (_|
 print(f"{Fore.MAGENTA} /_/    \_\__,_|\__\___/  |_|    \__, |_|_| |_|___/\__\__,_|_|_|\___|_|    ")
 print(f"{Fore.MAGENTA}                                  __/ |                                    ")
 print(f"{Fore.MAGENTA}                                |___/                                      ")
+print(f"{Fore.MAGENTA}         (Now with audio!)                                                 ")
 print(f"{Fore.YELLOW}--------------------------------------------------------------------------")
 
 if platform.system() == "Windows":
@@ -23,7 +30,8 @@ elif platform.system() == "Darwin":
     print(f"{Fore.YELLOW}Selected OS: Mac")
 
 else:
-    print(f"{Fore.RED}OS NOT DETECTED")
+    print(f"{Fore.RED}OS NOT DETECTED OR SUPPORTED")
+    print(f"{Fore.YELLOW}--------------------------------------------------------------------------")
     print(Style.RESET_ALL)
     sys.exit()
 
@@ -45,20 +53,10 @@ print(f"{Fore.YELLOW}-----------------------------------------------------------
 print(Style.RESET_ALL)
 
 if platform.system() == "Darwin":
-    cmd = subprocess.Popen("pyinstaller --noconfirm newJadeLauncherMAC.spec", shell=True, stdout=subprocess.PIPE)
+    cmd = subprocess.call("pyinstaller --noconfirm newJadeLauncherMAC.spec", shell=True, stdout=subprocess.PIPE)
 
 else:
-    cmd = subprocess.Popen("pyinstaller --noconfirm newJadeLauncherWINDOWS.spec", shell=True, stdout=subprocess.PIPE)
-    
-for line in cmd.stdout:
-    if "INFO" in line:
-        print(f"{Fore.YELLOW}{line}")
-
-    elif "ERROR" in line:
-        print(f"{Fore.RED}{line}")
-
-    elif "eggs" in line:
-        print(f"{Fore.MAGENTA}{line}")
+    cmd = subprocess.call("pyinstaller --noconfirm newJadeLauncherWINDOWS.spec", shell=True, stdout=subprocess.PIPE)
 
 
 if platform.system() == "Darwin":
@@ -72,7 +70,8 @@ if platform.system() == "Darwin":
 else:
     print(f"{Fore.GREEN} Done!")
     print(f"{Fore.YELLOW}--------------------------------------------------------------------------")
-
+    # thanks to https://notificationsounds.com/free-jingles-and-logos/message-ringtone-magic
+    playsound.playsound("magic.mp3")
 
 
 print(Style.RESET_ALL)

@@ -67,8 +67,8 @@ else:
     developmental = True
 
 Version_MAJOR = 2
-Version_MINOR = 1
-Version_PATCH = 1
+Version_MINOR = 2
+Version_PATCH = 0
 debug = False
 debugOpenAllWindows = False
 
@@ -1425,7 +1425,7 @@ class MAINFuncs:
         from timeit import default_timer as runDuration
         startElapsedTime = runDuration()
 
-        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode: Main code thread started!")
+        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode: Main code started!")
 
         def show_message(text):
             text = text + "\n"
@@ -1449,6 +1449,8 @@ class MAINFuncs:
             else:
                 print("Your OS isn't supported! Please use Windows or Mac.")
                 UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
+
+        # Load Splash screen
         
         # Thanks to Liam on StackOverflow
         # https://stackoverflow.com/questions/58661539/create-splash-screen-in-pyqt5
@@ -1506,7 +1508,6 @@ class MAINFuncs:
         UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Checking for updates...")
         show_message("Checking for updates...")
 
-        # Check for updates
         UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Checking if there's an old update.")
         try:
             os.remove("Jade Launcher.exe.old")
@@ -1591,6 +1592,105 @@ class MAINFuncs:
 
         else:
             UTILITYFuncs.logAndPrint("WARN", "MAINFuncs/mainCode/checkForUpdates: Skipping checking for updates, as we can't tell if it's turned off or on. '{CONFIG_CheckForUpdates}'")
+
+        # Jade Auth
+        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/jadeauth: Loading Jade Auth...")
+        show_message("Loading Jade Auth...")
+        try:
+            jadeauth_version_file = open("JadeAuthVersion.txt")
+            jadeauth_version_file_read = jadeauth_version_file.readlines()
+            jadeauth_version_file.close()
+
+            jadeauth_local_version_major = int(jadeauth_version_file_read[0])
+            jadeauth_local_version_minor = int(jadeauth_version_file_read[1])
+            jadeauth_local_version_patch = int(jadeauth_version_file_read[2])
+
+        except FileNotFoundError:
+            UTILITYFuncs.logAndPrint("INFO", "The Jade Auth Version file does not exist. Has Jade Auth been installed?")
+            # Hacky way LOL
+            jadeauth_local_version_major = 0
+            jadeauth_local_version_minor = 0
+            jadeauth_local_version_patch = 0
+            
+        
+
+        try:
+            jadeauth_version_request = requests.get("https://nfoert.pythonanywhere.com/jadeauth/version")
+            jadeauth_version_request.raise_for_status()
+            jadeauth_version_request.text
+
+        except Exception as e:
+            UTILITYFuncs.logAndPrint("WARN", f"There was a problem getting the Jade Auth version request! '{e}'")
+            if Path("Jade Auth.exe").is_file():
+                # It exists, so It's ok to skip
+                pass
+
+            else:
+                # Jade Auth doesen't exist, so stuff will break. Best to error out.
+                UTILITYFuncs.error(f"There was a problem getting the Jade Auth version request! '{e}'")
+
+        try:
+            jadeauth_server_version_major = int(UTILITYFuncs.substring(jadeauth_version_request.text, "major=", ",minor"))
+            jadeauth_server_version_minor = int(UTILITYFuncs.substring(jadeauth_version_request.text, "minor=", ",patch"))
+            jadeauth_server_version_patch = int(UTILITYFuncs.substring(jadeauth_version_request.text, "patch=", "&"))
+
+        except Exception as e:
+            UTILITYFuncs.logAndPrint("FATAL", f"There was a problem substringing the Jade Auth Version Request! '{e}'")
+            UTILITYFuncs.error(f"There was a problem substringing the Jade Auth Version Request! '{e}'")
+
+        if jadeauth_local_version_major < jadeauth_server_version_major:
+            jadeauth_update = True
+
+        elif jadeauth_local_version_minor < jadeauth_server_version_minor:
+            jadeauth_update = True
+
+        elif jadeauth_local_version_patch < jadeauth_server_version_patch:
+            jadeauth_update = True
+
+        elif Path("Jade Auth.exe").is_file() == False:
+            # If Jade Auth is not present should fetch it
+            jadeauth_update = True
+
+        else:
+            jadeauth_update = False
+
+
+        if jadeauth_update == True:
+            # Update Now
+            show_message("Downloading Jade Auth...")
+
+            jadeauth_download = requests.get("https://nfoert.pythonanywhere.com/jadeauth/download", stream=True)
+
+            total_size_in_bytes = int(jadeauth_download.headers.get('content-length', 0))
+            bytes_downloaded = 0
+            last = 0
+
+            with open("Jade Auth.exe", "wb") as file: #TODO: Transition to Jade Auth.exe.download
+                for data in jadeauth_download.iter_content(1024):
+                    file.write(data)
+                    bytes_downloaded = bytes_downloaded + 1024
+                    percent = bytes_downloaded / total_size_in_bytes
+                    percent = percent * 100
+                    percent = round(percent)
+                    if last != percent:
+                        last = percent
+                        show_message(f"Downloading Jade Auth [{percent}%]")
+
+            file.close()
+
+            jadeauth_version_file = open("JadeAuthVersion.txt", "w")
+            jadeauth_version_file.write(f"{jadeauth_server_version_major}\n{jadeauth_server_version_minor}\n{jadeauth_server_version_patch}")
+            jadeauth_version_file.close()
+
+            try:
+                os.remove("Jade Auth.exe")
+
+            except FileNotFoundError:
+                UTILITYFuncs.logAndPrint("WARN", "Unable to remove Jade Auth.exe after updating. Does it exist?")
+
+
+        
+
 
 
         # Sign in
@@ -1962,7 +2062,7 @@ class MAINFuncs:
 
             try:
                 introConfig = jadelauncher_config.getValue("intro")
-            
+
             except config.UnableToGetValue:
                 jadelauncher_config.setValue("intro", "true")
                 introConfig = "true"
