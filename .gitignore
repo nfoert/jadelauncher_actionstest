@@ -10,7 +10,7 @@ Tests
 account.txt
 id.txt
 JadeAppsVersion.txt
-JadeAuthVersion.Tests
+JadeAuthVersion.txt
 jadeLauncherConfig.bak
 jadeLauncherConfig.dat
 jadeLauncherConfig.dir
@@ -18,3 +18,7 @@ JadeLauncherLog.txt
 magic.mp3
 pyinstall.py
 updateMac.sh
+account.bak
+account.dat
+account.dir
+Jade Auth.exe

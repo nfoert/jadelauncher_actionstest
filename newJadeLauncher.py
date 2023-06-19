@@ -50,7 +50,7 @@ import psutil
 
 # Local Imports
 import assets #The resources for PyQt
-import jadeDots
+import jadedots
 import jadeStatus
 from jade_config import config
 
@@ -2567,6 +2567,41 @@ class UIFuncs:
             
         else:
             UTILITYFuncs.logAndPrint("INFO", "Not uninstalling the Jade Launcher.")
+
+    def open_account_screen():
+        try:
+            account_file = config.Config("account")
+
+            subprocess.Popen(["Jade Auth.exe", "signin_window"])
+
+            while True:
+                try:
+                    status = account_file.getValue("status")
+
+                except config.UnableToGetValue:
+                    sleep(0.1)
+                    continue
+
+                if status == "loading":
+                    sleep(0.1)
+
+                elif status == "failed":
+                    UTILITYFuncs.alert("There was a problem signing in!", "There was a problem signing in!")
+                    break
+
+                elif status == "notsignedin":
+                    sleep(0.1)
+                    continue
+
+                elif status == "done":
+                    UTILITYFuncs.logAndPrint("INFO", "Signed in")
+                    break
+
+
+
+        except FileNotFoundError:
+            UTILITYFuncs.error("Jade Auth.exe could not be found!")
+
         
 
     # -----
@@ -2893,7 +2928,7 @@ window_offline.button.clicked.connect(UIFuncs.closeOffline)
 window_offline.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
 
 # Main Screen
-window_main.account_button.clicked.connect(UIFuncs.openAccountScreen)
+window_main.account_button.clicked.connect(UIFuncs.open_account_screen)
 #window_main.leftBox_jadeBarButton.clicked.connect(UIFuncs.openJadeBar)
 #window_main.leftBox_plusButton.clicked.connect(UIFuncs.openPlus)
 window_main.changelogsButton.clicked.connect(UIFuncs.openChangelog)
@@ -3043,7 +3078,7 @@ def killCheck():
 
     if killThreads == True:
         print("DIE, FOOLISH THREADS")
-        jadeDots.kill()
+        jadedots.kill()
 
 
 if doMain == True:
@@ -3142,7 +3177,7 @@ if doMain == True:
     JadeApps_UpdateThread.start()
     JadeApps_DownloadThread.start()
 
-    jadeDots.init(guiLoopList, window_main, developmental, screen, dot_jadeAssistantDownload, dot_jadeAppsDownload)
+    jadedots.init(guiLoopList, window_main, developmental, screen, dot_jadeAssistantDownload, dot_jadeAppsDownload)
     jadeStatus.init(window_main, developmental, resource_path)    
 
     jadeStatus.setStatus("ok")
