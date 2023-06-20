@@ -28,6 +28,7 @@ import platform
 import webbrowser
 import threading
 import sys
+import psutil
 
 # Third Party Imports
 from PyQt5 import QtWidgets, uic, QtCore, QtGui
@@ -2591,7 +2592,12 @@ class UIFuncs:
 
                 elif status == "notsignedin":
                     sleep(0.1)
-                    continue
+                    if "Jade Auth.exe" in (p.name for p in psutil.process_iter()):
+                        continue
+
+                    else:
+                        UTILITYFuncs.logAndPrint("INFO", "Jade Auth has closed.")
+                        break
 
                 elif status == "done":
                     UTILITYFuncs.logAndPrint("INFO", "Signed in")
