@@ -873,24 +873,29 @@ class App:
         UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: Launching {self.name}...")
         global killThreads
         global TruePath
-        try:
-            if platform.system() == "Windows":
-                subprocess.Popen(self.exe_location)
-                UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (windows)")
-        
-            elif platform.system() == "Darwin":
-                subprocess.run(["open", f"{TruePath}{self.exe_location}"])
-                killThreads = True
-                UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (mac)")
-                sys.exit()
-                
-            else:
-                UTILITYFuncs.logAndPrint("FATAL", "App/launchApp: Your OS isn't supported! Please use Mac or Windows.")
-                UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac or Windows.")
+        global SignedIn
+        if SignedIn == True:
+            try:
+                if platform.system() == "Windows":
+                    subprocess.Popen(self.exe_location)
+                    UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (windows)")
+            
+                elif platform.system() == "Darwin":
+                    subprocess.run(["open", f"{TruePath}{self.exe_location}"])
+                    killThreads = True
+                    UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (mac)")
+                    sys.exit()
+                    
+                else:
+                    UTILITYFuncs.logAndPrint("FATAL", "App/launchApp: Your OS isn't supported! Please use Mac or Windows.")
+                    UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac or Windows.")
 
-        except Exception as e:
-            UTILITYFuncs.logAndPrint("INFO", f"UIFuncs/launchJadeAssistant: There was a problem launching {self.name}! {e}")
-            UTILITYFuncs.error(f"There was a problem launching Jade Assistant! {e}")
+            except Exception as e:
+                UTILITYFuncs.logAndPrint("INFO", f"UIFuncs/launchApp: There was a problem launching {self.name}! '{e}'")
+                UTILITYFuncs.error(f"There was a problem launching {self.name}! '{e}'")
+
+        else:
+            UTILITYFuncs.alert("You're not signed in!", "Please sign in to launch apps.")
 
     def downloadApp(self):
         '''Download the app'''
@@ -1420,6 +1425,8 @@ class MAINFuncs:
 
         global update
 
+        global SignedIn
+
         # That's a lot of global variables :)
 
         from timeit import default_timer as runDuration
@@ -1596,6 +1603,10 @@ class MAINFuncs:
         # Jade Auth
         UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/jadeauth: Loading Jade Auth...")
         show_message("Loading Jade Auth...")
+        if Path("Jade Auth.exe.download").is_file():
+            UTILITYFuncs.logAndPrint("INFO", "Jade Auth.exe.download is already present, removing it.")
+            os.remove("Jade Auth.exe.download")
+
         try:
             jadeauth_version_file = open("JadeAuthVersion.txt")
             jadeauth_version_file_read = jadeauth_version_file.readlines()
@@ -1665,7 +1676,7 @@ class MAINFuncs:
             bytes_downloaded = 0
             last = 0
 
-            with open("Jade Auth.exe", "wb") as file: #TODO: Transition to Jade Auth.exe.download
+            with open("Jade Auth.exe.download", "wb") as file:
                 for data in jadeauth_download.iter_content(1024):
                     file.write(data)
                     bytes_downloaded = bytes_downloaded + 1024
@@ -1684,6 +1695,7 @@ class MAINFuncs:
 
             try:
                 os.remove("Jade Auth.exe")
+                os.rename("Jade Auth.exe.download", "Jade Auth.exe")
 
             except FileNotFoundError:
                 UTILITYFuncs.logAndPrint("WARN", "Unable to remove Jade Auth.exe after updating. Does it exist?")
@@ -1701,7 +1713,76 @@ class MAINFuncs:
             gc = UTILITYFuncs.getConnection("mainCode/Authenticate")
             if gc == True:
                 UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/authenticate: Signing in...")
-                myAccount.Authenticate()
+                try:
+                    account_file = config.Config("account")
+
+                    subprocess.Popen(["Jade Auth.exe", "signin"])
+
+                    while True:
+                        try:
+                            status = account_file.getValue("status")
+
+                        except config.UnableToGetValue:
+                            sleep(0.1)
+                            continue
+
+                        if status == "loading":
+                            sleep(0.1)
+                        
+                        elif status == "failed":
+                            UTILITYFuncs.alert("There was a problem signing in!", "There was a problem signing in!")
+
+                            window_main.account_label.setText("Not signed in.")
+                            window_main.account_label.setStyleSheet("color: red")
+                            window_main.account_letter.setText("")
+                            SignedIn = False
+                            break
+
+                        elif status == "notsignedin":
+                            sleep(0.1)
+                            if "Jade Auth.exe" in (p.name for p in psutil.process_iter()):
+                                continue
+
+                            else:
+                                UTILITYFuncs.logAndPrint("INFO", "Jade Auth has closed.")
+                                window_main.account_label.setText("Not signed in.")
+                                window_main.account_label.setStyleSheet("color: red")
+                                window_main.account_letter.setText("")
+                                SignedIn = False
+                                break
+
+                        elif status == "done":
+                            UTILITYFuncs.logAndPrint("INFO", "Signed in")
+                            username = account_file.getValue("username")
+
+                            if username == "":
+                                window_main.account_label.setText("Not signed in.")
+                                window_main.account_label.setStyleSheet("color: red")
+                                window_main.account_letter.setText("")
+                                SignedIn = False
+
+                            else:
+                                window_main.account_label.setText(f"Hello, {username}")
+                                window_main.account_label.setStyleSheet("color: green")
+                                window_main.account_letter.setText(username[0])
+                                SignedIn = True
+
+                            suspended = account_file.getValue("suspended")
+                            if suspended == "no":
+                                UTILITYFuncs.logAndPrint("INFO", "Your account isn't suspended!")
+
+                            else:
+                                UTILITYFuncs.logAndPrint("INFO", f"Your account is suspended for '{suspended}'")
+
+                            break
+
+
+                except FileNotFoundError:
+                    window_main.account_label.setText("Not signed in.")
+                    window_main.account_label.setStyleSheet("color: red")
+                    window_main.account_letter.setText("")
+                    SignedIn = False
+                    UTILITYFuncs.error("Jade Auth.exe could not be found!")
 
             elif gc == False:
                 UTILITYFuncs.logAndPrint("NOT CONNECTED", "MAINFuncs/mainCode/authenticate: Skipping signing in as you're not connected.")
@@ -2449,6 +2530,7 @@ class UIFuncs:
         # Get values
         introConfig = jadelauncher_config.getValue("intro")
         newConfig = jadelauncher_config.getValue("new")
+        simpleConfig = jadelauncher_config.getValue("simple")
 
         # Set checkboxes
         if introConfig == "true":
@@ -2469,6 +2551,15 @@ class UIFuncs:
         else:
             UTILITYFuncs.logAndPrint("WARN", "Config: 'new' value not recognized")
 
+        if simpleConfig == "true":
+            window_settings.simple.setChecked(True)
+
+        elif simpleConfig == "false":
+            window_settings.simple.setChecked(False)
+
+        else:
+            UTILITYFuncs.logAndPrint("WARN", "Config: 'simple' value not recognized")
+
 
         # Show window
         window_settings.show()
@@ -2483,6 +2574,12 @@ class UIFuncs:
 
         if window_settings.newScreen.isChecked():
             jadelauncher_config.setValue("new", "true")
+
+        else:
+            jadelauncher_config.setValue("new", "false")
+
+        if window_settings.simple.isChecked():
+            jadelauncher_config.setValue("simple", "true")
 
         else:
             jadelauncher_config.setValue("new", "false")
@@ -2570,6 +2667,8 @@ class UIFuncs:
             UTILITYFuncs.logAndPrint("INFO", "Not uninstalling the Jade Launcher.")
 
     def open_account_screen():
+        global SignedIn
+
         try:
             account_file = config.Config("account")
 
@@ -2588,6 +2687,10 @@ class UIFuncs:
 
                 elif status == "failed":
                     UTILITYFuncs.alert("There was a problem signing in!", "There was a problem signing in!")
+                    window_main.account_label.setText("Not signed in.")
+                    window_main.account_label.setStyleSheet("color: red")
+                    window_main.account_letter.setText("")
+                    SignedIn = False
                     break
 
                 elif status == "notsignedin":
@@ -2597,10 +2700,28 @@ class UIFuncs:
 
                     else:
                         UTILITYFuncs.logAndPrint("INFO", "Jade Auth has closed.")
+                        window_main.account_label.setText("Not signed in.")
+                        window_main.account_label.setStyleSheet("color: red")
+                        window_main.account_letter.setText("")
+                        SignedIn = False
                         break
 
                 elif status == "done":
                     UTILITYFuncs.logAndPrint("INFO", "Signed in")
+                    username = account_file.getValue("username")
+
+                    if username == "":
+                        window_main.account_label.setText("Not signed in.")
+                        window_main.account_label.setStyleSheet("color: red")
+                        window_main.account_letter.setText("")
+                        SignedIn = False
+
+                    else:
+                        window_main.account_label.setText(f"Hello, {username}")
+                        window_main.account_label.setStyleSheet("color: green")
+                        window_main.account_letter.setText(username[0])
+                        SignedIn = True
+
                     break
 
 
@@ -2713,11 +2834,11 @@ def downloadUpdateThread():
             continue
 
 
-def installUpdateThread():
+def install_update_thread():
     global installUpdateVar
     global killThreads
     global cancelInstallUpdateVar
-    UTILITYFuncs.logAndPrint("INFO", "Threads/installUpdateThread: Thread started.")
+    UTILITYFuncs.logAndPrint("INFO", "Threads/install_update_thread: Thread started.")
 
     while True:
         if installUpdateVar == True:
@@ -2728,7 +2849,7 @@ def installUpdateThread():
             guiLoopList.append('window_status.jadeLauncher_cancel.show()')
             for i in range(5, 0, -1): #Counts down. range(start, end, step) Thanks to Burger King's answer here: https://stackoverflow.com/questions/29292133/how-to-count-down-in-for-loop
                 if cancelInstallUpdateVar == True:
-                    UTILITYFuncs.logAndPrint("INFO", "Threads/installUpdateThread: Canceling the installing of the Jade Launcher update.")
+                    UTILITYFuncs.logAndPrint("INFO", "Threads/install_update_thread: Canceling the installing of the Jade Launcher update.")
                     guiLoopList.append('window_status.jadeLauncher_download.hide()')
                     guiLoopList.append('window_status.jadeLauncher_install.show()')
                     guiLoopList.append('window_status.jadeLauncher_cancel.hide()')
@@ -2742,7 +2863,7 @@ def installUpdateThread():
                     sleep(1)
 
             if cancel == True:
-                UTILITYFuncs.logAndPrint("INFO", "Threads/installUpdateThread: Not installing update, as it was canceled.")
+                UTILITYFuncs.logAndPrint("INFO", "Threads/install_update_thread: Not installing update, as it was canceled.")
 
             else:
                 guiLoopList.append('window_status.jadeLauncher_cancel.hide()')
@@ -2761,9 +2882,9 @@ def installUpdateThread():
                 DETACHED_PROCESS = 0x00000008
 
                 try:
-                    subprocess.Popen("Jade Launcher.exe", creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP) #TODO: BROKEN IDK WHY HELP HELP HELP
+                    subprocess.Popen("Jade Launcher.exe", creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
                     installUpdateVar = False
-                    guiLoopList.append('app.closeAllWindows()') #FIXME: IT"S ALL A MESS BROKEN NOT WORKING ASDHFJKHAJKFJKASDHFKJKA
+                    guiLoopList.append('app.closeAllWindows()')
                     guiLoopList.append('app.quit()')
                     sys.exit()
                 
@@ -2776,8 +2897,8 @@ def installUpdateThread():
             sleep(0.1)
             continue
 
-def checkForRunningAppsThread(): # TODO: Coming in 2.1.0
-    print("Threads:/checkForRunningAppsThread: Thread started.")
+def check_for_running_apps_thread(): # TODO: Coming in 2.1.0
+    print("Threads:/check_for_running_apps_thread: Thread started.")
     while True:
         # Thanks to https://thispointer.com/python-check-if-a-process-is-running-by-name-and-find-its-process-id-pid/
         # and Mark's answer here: https://stackoverflow.com/questions/7787120/check-if-a-process-is-running-or-not-on-windows
@@ -2808,17 +2929,52 @@ def checkForRunningAppsThread(): # TODO: Coming in 2.1.0
                 guiLoopList.append('window_status.jadeApps_remove.show()')
                 guiLoopList.append('window_status.jadeApps_stop.hide()')
 
+def update_account_label_thread():
+    '''Nasty solution to fix the problem of the account label not updating when you sign in or out. Added in 2.2.0 on 6/20/23'''
+    global SignedIn
+    UTILITYFuncs.logAndPrint("INFO", "Threads:/update_account_label_thread: Thread started.")
+    account_file = config.Config("account")
+    while True:
+        try:
+            username = account_file.getValue("username")
+        except config.UnableToGetValue:
+            account_file.setValue("username", "")
+            username = ""
+        
+        if username == "":
+            guiLoopList.append('window_main.account_label.setText("Not signed in.")')
+            guiLoopList.append('window_main.account_label.setStyleSheet("color: red")')
+            guiLoopList.append('window_main.account_letter.setText("")')
+            SignedIn = False
+
+        else:
+            guiLoopList.append(f'window_main.account_label.setText("Hello, {username}")')
+            guiLoopList.append('window_main.account_label.setStyleSheet("color: green")')
+            guiLoopList.append(f'window_main.account_letter.setText("{username[0]}")')
+            SignedIn = True  
+
+        sleep(3)
+
+
 
 # Start threads
 downloadUpdateManager = threading.Thread(target=downloadUpdateThread, daemon=True)
 downloadUpdateManager.start()
 
-installUpdateManager = threading.Thread(target=installUpdateThread, daemon=True)
+installUpdateManager = threading.Thread(target=install_update_thread, daemon=True)
 installUpdateManager.start()
 
-checkForRunningAppsThreadManager = threading.Thread(target=checkForRunningAppsThread, daemon=True)
+checkForRunningAppsThreadManager = threading.Thread(target=check_for_running_apps_thread, daemon=True)
 #checkForRunningAppsThreadManager.start() TODO: Coming in 2.1.0
 
+update_account_label_thread_manager = threading.Thread(target=update_account_label_thread, daemon=True)
+config_file = config.Config("jadeLauncherConfig")
+try:
+    if config_file.getValue("simple") == "false":
+        update_account_label_thread_manager.start()
+
+except config.UnableToGetValue:
+    config_file.setValue("simple", "false")
     
 
 # ----------
