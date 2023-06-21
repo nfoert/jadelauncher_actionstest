@@ -1192,13 +1192,19 @@ class MAINFuncs:
 
         # Jade Auth
         UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/jadeauth: Loading Jade Auth...")
+        if Path("./apps").is_dir() == False:
+            os.mkdir("./apps")
+
+        if Path("./apps/jadeauth").is_dir() == False:
+            os.mkdir("./apps/jadeauth")
+
         show_message("Loading Jade Auth...")
-        if Path("Jade Auth.exe.download").is_file():
+        if Path("./apps/jadeauth/Jade Auth.exe.download").is_file():
             UTILITYFuncs.logAndPrint("INFO", "Jade Auth.exe.download is already present, removing it.")
-            os.remove("Jade Auth.exe.download")
+            os.remove("./apps/jadeauth/Jade Auth.exe.download")
 
         try:
-            jadeauth_version_file = open("JadeAuthVersion.txt")
+            jadeauth_version_file = open("./apps/jadeauth/JadeAuthVersion.txt")
             jadeauth_version_file_read = jadeauth_version_file.readlines()
             jadeauth_version_file.close()
 
@@ -1222,7 +1228,7 @@ class MAINFuncs:
 
         except Exception as e:
             UTILITYFuncs.logAndPrint("WARN", f"There was a problem getting the Jade Auth version request! '{e}'")
-            if Path("Jade Auth.exe").is_file():
+            if Path("./apps/jadeauth/Jade Auth.exe").is_file():
                 # It exists, so It's ok to skip
                 pass
 
@@ -1248,7 +1254,7 @@ class MAINFuncs:
         elif jadeauth_local_version_patch < jadeauth_server_version_patch:
             jadeauth_update = True
 
-        elif Path("Jade Auth.exe").is_file() == False:
+        elif Path("./apps/jadeauth/Jade Auth.exe").is_file() == False:
             # If Jade Auth is not present should fetch it
             jadeauth_update = True
 
@@ -1266,7 +1272,7 @@ class MAINFuncs:
             bytes_downloaded = 0
             last = 0
 
-            with open("Jade Auth.exe.download", "wb") as file:
+            with open("./apps/jadeauth/Jade Auth.exe.download", "wb") as file:
                 for data in jadeauth_download.iter_content(1024):
                     file.write(data)
                     bytes_downloaded = bytes_downloaded + 1024
@@ -1275,24 +1281,25 @@ class MAINFuncs:
                     percent = round(percent)
                     if last != percent:
                         last = percent
-                        show_message(f"Downloading Jade Auth [{percent}%]")
+                        show_message(f"Downloading Jade Auth... [{percent}%]")
 
             file.close()
 
-            jadeauth_version_file = open("JadeAuthVersion.txt", "w")
+            jadeauth_version_file = open("./apps/jadeauth/JadeAuthVersion.txt", "w")
             jadeauth_version_file.write(f"{jadeauth_server_version_major}\n{jadeauth_server_version_minor}\n{jadeauth_server_version_patch}")
             jadeauth_version_file.close()
 
             try:
-                os.remove("Jade Auth.exe")
-                os.rename("Jade Auth.exe.download", "Jade Auth.exe")
+                os.remove("./apps/jadeauth/Jade Auth.exe")
 
             except FileNotFoundError:
                 UTILITYFuncs.logAndPrint("WARN", "Unable to remove Jade Auth.exe after updating. Does it exist?")
 
+            try:
+                os.rename("./apps/jadeauth/Jade Auth.exe.download", "./apps/jadeauth/Jade Auth.exe")
 
-        
-
+            except FileNotFoundError:
+                UTILITYFuncs.logAndPrint("WARN", "Unable to remove Jade Auth.exe after updating. Does it exist?")
 
 
         # Sign in
@@ -1304,9 +1311,9 @@ class MAINFuncs:
             if gc == True:
                 UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/authenticate: Signing in...")
                 try:
-                    account_file = config.Config("account")
+                    account_file = config.Config("./apps/account")
 
-                    subprocess.Popen(["Jade Auth.exe", "signin"])
+                    subprocess.Popen(["./apps/jadeauth/Jade Auth.exe", "signin"])
 
                     while True:
                         try:
@@ -1629,7 +1636,7 @@ class MAINFuncs:
         # Update Id
         UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/updateLauncherId: Updating Launcher Id...")
         show_message("Updating Launcher ID...")
-        account_file = config.Config("account")
+        account_file = config.Config("./apps/account")
         try:
             username = account_file.getValue("username")
 
@@ -1725,7 +1732,7 @@ class MAINFuncs:
                 window_status.jadeLauncher_install.hide()
 
         # Check for suspension
-        account_file = config.Config("account")
+        account_file = config.Config("./apps/account")
         try:
             suspended = account_file.getValue("suspended")
         
@@ -2190,9 +2197,9 @@ class UIFuncs:
         global SignedIn
 
         try:
-            account_file = config.Config("account")
+            account_file = config.Config("./apps/account")
 
-            subprocess.Popen(["Jade Auth.exe", "signin_window"])
+            subprocess.Popen(["./apps/jadeauth/Jade Auth.exe", "signin_window"])
 
             while True:
                 try:
@@ -2215,7 +2222,7 @@ class UIFuncs:
 
                 elif status == "notsignedin":
                     sleep(0.1)
-                    if "Jade Auth.exe" in (p.name for p in psutil.process_iter()):
+                    if "./apps/jadeauth/Jade Auth.exe" in (p.name for p in psutil.process_iter()):
                         continue
 
                     else:
@@ -2453,7 +2460,7 @@ def update_account_label_thread():
     '''Nasty solution to fix the problem of the account label not updating when you sign in or out. Added in 2.2.0 on 6/20/23'''
     global SignedIn
     UTILITYFuncs.logAndPrint("INFO", "Threads:/update_account_label_thread: Thread started.")
-    account_file = config.Config("account")
+    account_file = config.Config("./apps/account")
     while True:
         try:
             username = account_file.getValue("username")
@@ -2751,7 +2758,7 @@ if doMain == True:
         "path": "Jade Assistant",
         "version": "Loading...",
         "download_folder": "./apps/jadeassistant",
-        "download_url": "https://github.com/nfoert/jadeassistant/raw/main/Jade%20Assistant.exe",
+        "download_url": "https://nfoert.pythonanywhere.com/jadeAssistant/download",
         "exe_location": "./apps/jadeassistant/Jade Assistant.exe",
         "version_file_location": "./apps/jadeassistant/JadeAssistantVersion.txt",
         "version_url": "https://nfoert.pythonanywhere.com/jadeAssistant/jadeAssistantVersion",
@@ -2778,7 +2785,7 @@ if doMain == True:
         "path": "Jade Apps",
         "version": "Loading...",
         "download_folder": "./apps/jadeapps",
-        "download_url": "https://github.com/nfoert/jadeapps/raw/main/Jade%20Apps.exe",
+        "download_url": "https://nfoert.pythonanywhere.com/jadeapps/download",
         "exe_location": "./apps/jadeapps/Jade Apps.exe",
         "version_file_location": "./apps/jadeapps/JadeAppsVersion.txt",
         "version_url": "https://nfoert.pythonanywhere.com/jadeapps/jadeAppsVersion",
