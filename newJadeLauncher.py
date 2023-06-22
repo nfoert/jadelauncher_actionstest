@@ -470,7 +470,8 @@ class App:
         global killThreads
         global TruePath
         global SignedIn
-        if SignedIn == True:
+        get_connection = UTILITYFuncs.getConnection("launchApp")
+        if SignedIn == True or get_connection == False:
             try:
                 if platform.system() == "Windows":
                     subprocess.Popen(self.exe_location)
