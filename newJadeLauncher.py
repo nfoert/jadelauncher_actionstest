@@ -1365,14 +1365,18 @@ class MAINFuncs:
                                 window_main.account_letter.setText(username[0])
                                 SignedIn = True
 
+
+                            status = account_file.getValue("status")
                             suspended = account_file.getValue("suspended")
-                            if suspended == "no":
-                                UTILITYFuncs.logAndPrint("INFO", "Your account isn't suspended!")
+                            
+                            if status != "notsignedin":
+                                if suspended == "no":
+                                    UTILITYFuncs.logAndPrint("INFO", "Your account isn't suspended!")
 
-                            else:
-                                UTILITYFuncs.logAndPrint("INFO", f"Your account is suspended for '{suspended}'")
+                                else:
+                                    UTILITYFuncs.logAndPrint("INFO", f"Your account is suspended for '{suspended}'")
 
-                            break
+                                break
 
 
                 except FileNotFoundError:
@@ -1740,7 +1744,10 @@ class MAINFuncs:
         except config.UnableToGetValue:
             suspended = "no"
 
-        if suspended == "no":
+        status = account_file.getValue("status")
+
+        
+        if suspended == "no" or status == "notsignedin":
             UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/suspensionCheck: Not suspended.")
             show_message("Done!")
             sleep(1.5)
