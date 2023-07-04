@@ -516,8 +516,8 @@ class App:
 
                 try:
                     UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Downloading {self.name}...")
-                    guiLoopList.append(f'jadeDots.showDot("{self.dot_name}")')
-                    guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "Loading...")')
+                    guiLoopList.append(f'jadedots.showDot("{self.dot_name}")')
+                    guiLoopList.append(f'jadedots.setDotPercent("{self.dot_name}", "Loading...")')
 
                     guiLoopList.append('jadeStatus.setStatus("load")')
                     
@@ -541,7 +541,7 @@ class App:
                                 last = percent
                                 guiLoopList.append(f'{self.label_status_loop}.setText("Downloading version {self.newVersion}... [{percent}%]")')
                                 guiLoopList.append(f'window_main.status_bar.setText("Downloading {self.name} {self.newVersion.replace(chr(10), "")}... [{percent}%]")') #chr(10) is a backslash
-                                guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "[{percent}%]")')
+                                guiLoopList.append(f'jadedots.setDotPercent("{self.dot_name}", "[{percent}%]")')
 
                             else:
                                 continue
@@ -579,8 +579,8 @@ class App:
 
                     guiLoopList.append(f'window_main.status_bar.setText("{self.name} was downloaded!")')
                     guiLoopList.append('jadeStatus.setStatus("ok")')
-                    guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "Done!")')
-                    guiLoopList.append(f'jadeDots.hideDot("{self.dot_name}")')
+                    guiLoopList.append(f'jadedots.setDotPercent("{self.dot_name}", "Done!")')
+                    guiLoopList.append(f'jadedots.hideDot("{self.dot_name}")')
 
                 except Exception as e:
                     UTILITYFuncs.logAndPrint("WARN", f"App/downloadApp: There was a problem downloading {self.name}! {e}")
@@ -616,8 +616,8 @@ class App:
 
                 try:
                     UTILITYFuncs.logAndPrint("INFO", f"App/updateApp: Updating {self.name}...")
-                    guiLoopList.append(f'jadeDots.showDot("{self.dot_name}")')
-                    guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "Loading...")')
+                    guiLoopList.append(f'jadedots.showDot("{self.dot_name}")')
+                    guiLoopList.append(f'jadedots.setDotPercent("{self.dot_name}", "Loading...")')
 
                     self.state = "updating"
                     guiLoopList.append('jadeStatus.setStatus("load")')
@@ -643,7 +643,7 @@ class App:
                                 last = percent
                                 guiLoopList.append(f'{self.label_status_loop}.setText("Updating to version {self.newVersion.replace(chr(10), "")}... [{percent}%]")') #chr(10) is a backslash
                                 guiLoopList.append(f'window_main.status_bar.setText("Updating {self.name} to {self.newVersion.replace(chr(10), "")}... [{percent}%]")')
-                                guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "[{percent}%]")')
+                                guiLoopList.append(f'jadedots.setDotPercent("{self.dot_name}", "[{percent}%]")')
 
                             else:
                                 continue
@@ -677,8 +677,8 @@ class App:
                     appVersionFile.close()
 
                     guiLoopList.append(f'window_main.status_bar.setText("{self.name} was updated to {self.newVersion.replace(chr(10), "")}")') #chr(10) is a backslash
-                    guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "Done!")')
-                    guiLoopList.append(f'jadeDots.hideDot("{self.dot_name}")')
+                    guiLoopList.append(f'jadedots.setDotPercent("{self.dot_name}", "Done!")')
+                    guiLoopList.append(f'jadedots.hideDot("{self.dot_name}")')
                     guiLoopList.append('jadeStatus.setStatus("ok")')
 
                 except Exception as e:

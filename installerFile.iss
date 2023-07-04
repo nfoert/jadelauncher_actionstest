@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Jade Launcher"
-#define MyAppVersion "2.1.1"
+#define MyAppVersion "2.2.0"
 #define MyAppPublisher "Jade Software"
 #define MyAppURL "https://nfoert.pythonanywhere.com/jadesite"
 #define MyAppExeName "Jade Launcher.exe"
@@ -23,7 +23,7 @@ DisableProgramGroupPage=yes
 ; Remove the following line to run in administrative install mode (install for all users.)
 PrivilegesRequired=lowest
 OutputBaseFilename=Jade Launcher Installer
-SetupIconFile=C:\Users\nfo23\OneDrive\Documents\Programming\THE NEW OF ALL\Jade Launcher\Jade Launcher Development Venv\Jade Launcher 2.1.1\favicon.ico
+SetupIconFile=C:\Users\nfo23\OneDrive\Documents\Programming\THE NEW OF ALL\Jade Launcher\Jade Launcher\favicon.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -36,7 +36,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\nfo23\OneDrive\Documents\Programming\THE NEW OF ALL\Jade Launcher\Jade Launcher Development Venv\Jade Launcher 2.1.1\dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\nfo23\OneDrive\Documents\Programming\THE NEW OF ALL\Jade Launcher\Jade Launcher\dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
