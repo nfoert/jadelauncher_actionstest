@@ -1,0 +1,51 @@
+<RCC>
+  <qresource prefix="animations">
+    <file>assets/animations/status_load.gif</file>
+  </qresource>
+  <qresource prefix="backgrounds">
+    <file>assets/backgrounds/new.png</file>
+    <file>assets/backgrounds/accountBackground.png</file>
+    <file>assets/backgrounds/background.png</file>
+    <file>assets/backgrounds/downloadsBackground.png</file>
+    <file>assets/backgrounds/errorBackground.png</file>
+    <file>assets/backgrounds/notificationsBackground.png</file>
+  </qresource>
+  <qresource prefix="dots">
+    <file>assets/dots/jadeAppsDownloadDot.png</file>
+    <file>assets/dots/jadeAssistantDownloadDot.png</file>
+  </qresource>
+  <qresource prefix="icons">
+    <file>assets/icons/stop.png</file>
+    <file>assets/icons/back.png</file>
+    <file>assets/icons/check.png</file>
+    <file>assets/icons/download.png</file>
+    <file>assets/icons/forward.png</file>
+    <file>assets/icons/gem.png</file>
+    <file>assets/icons/jadeIcon.png</file>
+    <file>assets/icons/launch.png</file>
+    <file>assets/icons/More.png</file>
+    <file>assets/icons/notifications.png</file>
+    <file>assets/icons/reload.png</file>
+    <file>assets/icons/settings.png</file>
+    <file>assets/icons/status_offline.png</file>
+    <file>assets/icons/status_ok.png</file>
+    <file>assets/icons/trash.png</file>
+  </qresource>
+  <qresource prefix="logos">
+    <file>assets/logos/Jade Account.png</file>
+    <file>assets/logos/Jade Apps.png</file>
+    <file>assets/logos/Jade Assistant.png</file>
+    <file>assets/logos/Jade Launcher.png</file>
+    <file>assets/logos/Jade Logo.png</file>
+    <file>assets/logos/Light Jade Logo.png</file>
+  </qresource>
+  <qresource prefix="other">
+    <file>assets/other/jadeAppsLaunch.png</file>
+    <file>assets/other/intro.png</file>
+    <file>assets/other/jadeAssistantLaunch.png</file>
+    <file>assets/other/JadeLauncherSplash.png</file>
+    <file>assets/other/JadeUpdaterSplash.png</file>
+    <file>assets/other/Line.png</file>
+    <file>assets/other/VerticalLine.png</file>
+  </qresource>
+</RCC>

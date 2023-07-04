@@ -28,6 +28,7 @@ import platform
 import webbrowser
 import threading
 import sys
+import psutil
 
 # Third Party Imports
 from PyQt5 import QtWidgets, uic, QtCore, QtGui
@@ -50,7 +51,7 @@ import psutil
 
 # Local Imports
 import assets #The resources for PyQt
-import jadeDots
+import jadedots
 import jadeStatus
 from jade_config import config
 
@@ -67,15 +68,14 @@ else:
     developmental = True
 
 Version_MAJOR = 2
-Version_MINOR = 1
-Version_PATCH = 1
+Version_MINOR = 2
+Version_PATCH = 0
 debug = False
 debugOpenAllWindows = False
 
 Version_TOTAL = f"{Version_MAJOR}.{Version_MINOR}.{Version_PATCH}"
 SignedIn = False
 LauncherIdVar = "Loading..."
-expanded = "0"
 
 guiLoopList = []
 killThreads = False
@@ -135,410 +135,6 @@ elif developmental == True:
 # ----------
 # Classes
 # ----------
-class Account:
-    '''A class to contain the user's account data, and also handles sign in, create acccount, change password, and more.'''
-    
-    def __init__(self, plus, suspended, username):
-        '''Init the class'''
-        self.plus = plus
-        self.suspended = suspended
-        self.username = username
-
-    def writeAccountFile(self, usernameIN, passwordIN):
-        '''Code for writing account file so we can remember you'''
-        global TruePath
-
-        UTILITYFuncs.logAndPrint("INFO", "Classes/Account/writeAccountFile: Writing account file...")
-        accountFile = open(f"{TruePath}account.txt", "w")
-        accountFile.write(usernameIN + "\n" + passwordIN)
-        accountFile.close()
-        UTILITYFuncs.logAndPrint("INFO", "Class/Account/writeAccountFile: Done writing account file.")
-
-    def Authenticate(self):
-        '''Code for authentication at startup'''
-
-        global SignedIn
-        global TruePath
-        UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: Reading account file...")
-        try:
-            try:
-                accountFile = open(f"{TruePath}account.txt", "r")
-            
-            except FileNotFoundError:
-                UTILITYFuncs.logAndPrint("WARN", "Classes/Account/Authenticate: Account file not found! Will create one.")
-                accountFile = open(f"{TruePath}account.txt", "w")
-                accountFile.close()
-                accountFile = open(f"{TruePath}account.txt", "r")
-
-            accountFileLines = accountFile.readlines()
-            accountFile.close()
-            if len(accountFileLines) == 0:
-                UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: Account file is empty! Not signed in.")
-                window_main.account_label.setText(f"Not signed in.")
-                window_main.account_label.setFont(QFont("Calibri", 8))
-                window_main.account_label.setAlignment(QtCore.Qt.AlignCenter)
-                window_main.account_label.setStyleSheet("color: red")
-                window_main.account_letter.setText("")
-                SignedIn = False
-
-            elif len(accountFileLines) == 2:
-                UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: Account file has data! Will try to sign in.")
-
-            else:
-                UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: There's a problem with the account file.")
-
-        except Exception as e:
-            UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/Authenticate: There was a problem signing you in. {e}")
-            UTILITYFuncs.error(f"There was a problem signing you in. {e}")
-
-        try:
-            USERNAME = accountFileLines[0]
-            PASSWORD = accountFileLines[1]
-            UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/Authenticate: Authenticating with username: {USERNAME} and password: {PASSWORD}")
-            try:
-                authenticateRequest = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/get?user={USERNAME},password={PASSWORD}&")
-                authenticateRequest.raise_for_status()
-            
-            except Exception as e:
-                UTILITYFuncs.logAndPrint("WARN", "Classes/Account/Authenticate: There was a problem getting authentication requests.")
-
-            if "user=" in authenticateRequest.text:
-
-                try:
-                    art = authenticateRequest.text
-                    art_email = UTILITYFuncs.substring(art, ",email=", ",name")
-                    art_name = UTILITYFuncs.substring(art, ",name=", ",plus")
-                    art_plus = UTILITYFuncs.substring(art, "plus=", ",suspended")
-                    art_suspended = UTILITYFuncs.substring(art, "suspended=", "&")
-
-                    if art_suspended == "no":
-                        UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: Your account isn't suspended!")
-
-                    else:
-                        UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/Authenticate: Your account is suspended for {art_suspended}")
-                        dialog_accountSuspended.MAINLABEL.setText(art_suspended)
-                        dialog_accountSuspended.MAINLABEL.setFont(QFont("Calibri", 10))
-                        
-                    
-
-
-                    SignedIn = True
-                    UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/Authenticate: SIGNED IN: email={art_email},name={art_name},jadeAssistant={art_plus}")
-                    window_accountDetails.usernameBox_username.setText(USERNAME)
-                    window_accountDetails.usernameBox_username.setFont(QFont("Calibri", 12))
-
-                    window_accountDetails.nameBox_name.setText(art_name)
-                    window_accountDetails.nameBox_name.setFont(QFont("Calibri", 12))
-
-                    window_accountDetails.emailBox_email.setText(art_email)
-                    window_accountDetails.emailBox_email.setFont(QFont("Calibri", 12))
-
-                    window_main.account_label.setText(f"Hello, {USERNAME}")
-                    window_main.account_label.setFont(QFont("Calibri", 11))
-                    window_main.account_label.setAlignment(QtCore.Qt.AlignCenter)
-                    window_main.account_label.setStyleSheet("color: green")
-
-                    window_main.account_letter.setText(USERNAME[0])
-                    window_main.account_label.setAlignment(QtCore.Qt.AlignCenter)
-
-                    self.username = USERNAME
-                    self.password = PASSWORD
-                    self.email = art_email
-                    self.name = art_name
-                    self.plus = art_plus
-                    self.suspended = art_suspended
-                    plus = art_plus
-                    suspended = art_suspended
-
-                    return True
-
-                except Exception as e:
-                    UTILITYFuncs.logAndPrint("FATAL", f"Classes/Account/Authenticate: There was a problem doing a bunch of essential stuff when Authenticating. {e}")
-                    UTILITYFuncs.error(f"There was a problem doing a bunch of essential stuff when Authenticating. {e}")
-
-                
-
-            elif "not" in authenticateRequest.text:
-                UTILITYFuncs.logAndPrint("INFO", "Classes/Account/Authenticate: Failed to sign in. Incorrect credentials.")
-                dialog_signInFailure.show()
-                window_main.account_label.setText(f"Not signed in.")
-                window_main.account_label.setFont(QFont("Calibri", 8))
-                window_main.account_label.setAlignment(QtCore.Qt.AlignCenter)
-                window_main.account_label.setStyleSheet("color: red")
-                window_main.account_letter.setText("")
-                SignedIn = False
-                return False
-
-        except Exception as e:
-            UTILITYFuncs.logAndPrint("WARN", f"Classes/Account/Authenticate: There was a problem signing you in. (Account file may have no content.) '{e}'")
-            window_main.account_label.setText(f"Not signed in.")
-            window_main.account_label.setFont(QFont("Calibri", 8))
-            window_main.account_label.setAlignment(QtCore.Qt.AlignCenter)
-            window_main.account_label.setStyleSheet("color: red")
-            window_main.account_letter.setText("")
-            SignedIn = False
-
-        
-    def signIn(self):
-        '''Code for signing in via the sign in window.'''
-        
-        global SignedIn
-        
-        usernameInput = window_signIn.usernameBox_edit.text()
-        passwordInput = window_signIn.passwordBox_edit.text()
-        
-        try:
-            signInRequest = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/get?user={usernameInput},password={passwordInput}&")
-            signInRequest.raise_for_status()
-            
-            if "user=" in signInRequest.text:
-                UTILITYFuncs.logAndPrint("INFO", "Classes/Account/signIn: Signed In!")
-                SignedIn = True
-                self.writeAccountFile(usernameInput, passwordInput)
-            
-                sir = signInRequest.text
-                sir_email = UTILITYFuncs.substring(sir, ",email=", ",name")
-                sir_name = UTILITYFuncs.substring(sir, ",name=", ",plus")
-                sir_plus = UTILITYFuncs.substring(sir, "plus=", ",suspended")
-                sir_suspended = UTILITYFuncs.substring(sir, ",suspended=", "&")
-
-                window_accountDetails.usernameBox_username.setText(usernameInput)
-                window_accountDetails.usernameBox_username.setFont(QFont("Calibri", 12))
-
-                window_accountDetails.nameBox_name.setText(sir_name)
-                window_accountDetails.nameBox_name.setFont(QFont("Calibri", 12))
-
-                window_accountDetails.emailBox_email.setText(sir_email)
-                window_accountDetails.emailBox_email.setFont(QFont("Calibri", 12))
-
-                window_main.account_label.setText(f"Hello, {usernameInput}")
-                window_main.account_label.setFont(QFont("Calibri Bold", 9))
-                window_main.account_label.setAlignment(QtCore.Qt.AlignCenter)
-                window_main.account_label.setStyleSheet("color: green")
-
-                window_main.account_letter.setText(usernameInput[0])
-
-                self.password = passwordInput
-                self.username = usernameInput
-                self.email = sir_email
-                self.name = sir_name
-
-                if sir_suspended == "no":
-                    UTILITYFuncs.logAndPrint("INFO", "Classes/Account/signIn: You're not suspended!")
-                    window_signIn.hide()
-                    window_accountDetails.show()
-
-                else:
-                    UTILITYFuncs.logAndPrint("INFO", "Classes/Account/signIn: You're suspended!")
-                    window_signIn.hide()
-                    window_main.hide()
-                    dialog_accountSuspended.MAINLABEL.setText(sir_suspended)
-                    dialog_accountSuspended.MAINLABEL.setFont(QFont("Calibri", 10))
-                    dialog_accountSuspended.show()
-
-            else:
-                UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/signIn: There was a problem signing you in: incorrect credentials. |{usernameInput}|, |{passwordInput}|, |{signInRequest.text}|")
-                SignedIn = False
-                dialog_signInFailure.show()
-        
-        except Exception as e:
-            UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/signIn: There was a problem signing you in. {e}")
-            
-    
-    def signOut(self):
-        '''Code for signing out'''
-
-        global SignedIn
-        SignedIn = False
-        self.writeAccountFile("","")
-        
-        window_signIn.usernameBox_edit.clear()
-        window_signIn.passwordBox_edit.clear()
-
-        window_main.account_label.setText(f"Not signed in.")
-        window_main.account_label.setFont(QFont("Calibri", 10))
-        window_main.account_label.setAlignment(QtCore.Qt.AlignCenter)
-        window_main.account_label.setStyleSheet("color: red")
-        window_main.account_letter.setText("")
-
-        window_accountDetails.hide()
-        window_signIn.show()
-        UTILITYFuncs.logAndPrint("INFO", "Classes/Account/signOut: Signed out.")
-
-    def createAccount(self):
-        '''Code for creating an account'''
-
-        usernameInput = window_createAccount.usernameBox_edit.text()
-        passwordInput = window_createAccount.passwordBox_edit.text()
-        emailInput = window_createAccount.emailBox_edit.text()
-        nameInput = window_createAccount.nameBox_edit.text()
-
-        gc = UTILITYFuncs.getConnection("Account/createAccount")
-        if gc == True:
-            window_createAccount.mainBox_button.setEnabled(False)
-            window_createAccount.mainBox_button.setText("Checking password...")
-            if len(passwordInput) >= 8:
-                
-                try:
-                    passwordCheck = pwnedpasswords.check(passwordInput)
-
-                except:
-                    passwordCheck = 0
-                    
-                if passwordCheck == 0:
-                        
-                    try:
-                        window_createAccount.mainBox_button.setText("Creating Account...")
-                        createAccountRequest = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/create?user={usernameInput},password={passwordInput},email={emailInput},name={nameInput}&")
-                        createAccountRequest.raise_for_status()
-
-                        if createAccountRequest.text == "Account successfully created.":
-                            UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: Account sucsessfully created.")
-                            window_createAccount.mainBox_button.setEnabled(True)
-                            window_createAccount.mainBox_button.setText("Create Account")
-
-                            UTILITYFuncs.alert("Account successfully created.", "Your Account has been created.")
-
-                            self.writeAccountFile(usernameInput, passwordInput)
-                            self.Authenticate()
-
-                            window_createAccount.usernameBox_edit.clear()
-                            window_createAccount.passwordBox_edit.clear()
-                            window_createAccount.nameBox_edit.clear()
-                            window_createAccount.emailBox_edit.clear()
-
-                            window_createAccount.hide()
-                            window_accountDetails.show()
-
-                        elif createAccountRequest.text == "That account already exists.":
-                            UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: That account already exists!")
-                            UTILITYFuncs.alert("That account already exists!", "That username matches another username in our database. Maybe you created an account, then forgot it existed?")
-                            window_createAccount.mainBox_button.setEnabled(True)
-                            window_createAccount.mainBox_button.setText("Create Account")
-
-                        else:
-                            UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: There was a problem.")
-                            UTILITYFuncs.alert("There was a problem creating an Account.", "We couldn't create your account.")
-                            window_createAccount.mainBox_button.setEnabled(True)
-                            window_createAccount.mainBox_button.setText("Create Account")
-
-                    except Exception as e:
-                        UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/createAccount: There was a problem creating an account. {e}")
-                        UTILITYFuncs.alert("There was a problem creating an Account.", "We couldn't create your account.")
-                        window_createAccount.mainBox_button.setEnabled(True)
-                        window_createAccount.mainBox_button.setText("Create Account")
-                    
-                elif passwordCheck >= 1:
-                    UTILITYFuncs.logAndPrint("INFO", f"Classes/Account/createAccount: Password is not safe! Has been leaked {passwordCheck} times.")
-                    UTILITYFuncs.alert("That password is not safe!", f"That password has been leaked {passwordCheck} times.")
-                    window_createAccount.mainBox_button.setEnabled(True)
-                    window_createAccount.mainBox_button.setText("Create Account")
-
-                else:
-                    UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: There was a problem checking password safety.")
-                    UTILITYFuncs.alert("There was a problem checking password safety.", "We were not able to confirm that your password is safe.")
-                    window_createAccount.mainBox_button.setEnabled(True)
-                    window_createAccount.mainBox_button.setText("Create Account")    
-
-
-            else:
-                UTILITYFuncs.logAndPrint("INFO", "Classes/Account/createAccount: Please select a password with more than 8 characters.")
-                UTILITYFuncs.alert("Password is too short!", "Please make sure your password has eight or more characters.")
-                window_createAccount.mainBox_button.setEnabled(True)
-                window_createAccount.mainBox_button.setText("Create Account")
-
-        elif gc == False:
-            UTILITYFuncs.alert("There was a problem creating an Account.", "You're not connected!")
-
-        else:
-            UTILITYFuncs.alert("There was a problem creating an Account.", "There was a problem getting connection status.")
-
-    def changePassword(self):
-        '''Code for changing the user's password'''
-        verificationCode = window_changePassword.verificationCode_edit.text()
-        oldPassword = window_changePassword.oldPassword_edit.text()
-        newPassword = window_changePassword.passwordBox_edit.text()
-
-        if len(newPassword) >= 8:
-            window_changePassword.button.setEnabled(False)
-            window_changePassword.button.setText("Checking password...")
-            try:
-                passwordCheck = pwnedpasswords.check(newPassword)
-
-            except:
-                    passwordCheck = 0
-
-            if passwordCheck == 0:
-
-                try:
-                    window_changePassword.button.setEnabled(False)
-                    window_changePassword.button.setText("Changing password...")
-                    changePasswordRequest = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/changePassword?username={self.username},password={oldPassword},code={verificationCode},new={newPassword}&")
-                    changePasswordRequest.raise_for_status()
-
-                    if changePasswordRequest.text == "True":
-                        window_changePassword.hide()
-                        window_accountDetails.hide()
-
-                        self.password = newPassword
-
-                        window_changePassword.verificationCode_edit.clear()
-                        window_changePassword.oldPassword_edit.clear()
-                        window_changePassword.passwordBox_edit.clear()
-
-                        UTILITYFuncs.logAndPrint("INFO", "Account/changePassword: You changed your password.")
-                        UTILITYFuncs.alert("Password changed", "Your password has been changed.")
-
-                        window_changePassword.button.setEnabled(True)
-                        window_changePassword.button.setText("Change Password")
-
-                        myAccount.writeAccountFile(self.username, newPassword)
-
-                        window_accountDetails.show()
-
-                    elif changePasswordRequest.text == "There was a problem getting Verification Code data.":
-                        window_changePassword.passwordBox_edit.clear()
-                        UTILITYFuncs.logAndPrint("WARN", f"Account/changePassword: Your verification code is not correct. '{changePasswordRequest.text}'")
-                        UTILITYFuncs.alert("Your verification code is not correct.", f"Please check your email account {self.email} to view your verification code.")
-                        window_changePassword.button.setEnabled(True)
-                        window_changePassword.button.setText("Change Password")
-
-                    elif changePasswordRequest.text == "There was a problem getting Account data.":
-                        UTILITYFuncs.logAndPrint("WARN", f"Account/changePassword: There was a problem getting Account data.. '{changePasswordRequest.text}'")
-                        UTILITYFuncs.alert("There was a problem getting Account data.", "It looks like your username is not correct for some reason.")
-                        window_changePassword.button.setEnabled(True)
-                        window_changePassword.button.setText("Change Password")
-
-                    elif changePasswordRequest.text == "That username and password don't match any Account in the database.":
-                        UTILITYFuncs.logAndPrint("WARN", f"Account/changePassword: Your old password is not correct. '{changePasswordRequest.text}'")
-                        UTILITYFuncs.alert("Your old password is not correct.", "Please confirm that your old password is correct.")
-                        window_changePassword.button.setEnabled(True)
-                        window_changePassword.button.setText("Change Password")
-
-                    else:
-                        window_changePassword.passwordBox_edit.clear()
-                        UTILITYFuncs.logAndPrint("WARN", f"Account/changePassword: There was a problem changing your password. '{changePasswordRequest.text}'")
-                        UTILITYFuncs.alert("There was a problem changing your password.", changePasswordRequest.text)
-                        window_changePassword.button.setEnabled(True)
-                        window_changePassword.button.setText("Change Password")
-
-                        
-                except Exception as e:
-                    UTILITYFuncs.logAndPrint("FATAL", f"Account/changePassword: An exception occured when changing your password. '{e}'")
-                    UTILITYFuncs.error(f"An exception occured when changing your password. '{e}'")
-                    window_changePassword.button.setEnabled(True)
-                    window_changePassword.button.setText("Change Password")
-
-            else:
-                UTILITYFuncs.alert("That password is not safe!", f"Your new password has been leaked {passwordCheck} times.")
-                window_changePassword.passwordBox_edit.clear()
-                window_changePassword.button.setEnabled(True)
-                window_changePassword.button.setText("Change Password")
-
-        else:
-            UTILITYFuncs.alert("That password is not long enough!", "Please make your new password eight or more characters.")
-            window_changePassword.passwordBox_edit.clear()
-        
 class News:
     '''A class to control news expansion and opening url.'''
     def __init__(self, header, date, text, url, number, code):
@@ -873,24 +469,30 @@ class App:
         UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: Launching {self.name}...")
         global killThreads
         global TruePath
-        try:
-            if platform.system() == "Windows":
-                subprocess.Popen(self.exe_location)
-                UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (windows)")
-        
-            elif platform.system() == "Darwin":
-                subprocess.run(["open", f"{TruePath}{self.exe_location}"])
-                killThreads = True
-                UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (mac)")
-                sys.exit()
-                
-            else:
-                UTILITYFuncs.logAndPrint("FATAL", "App/launchApp: Your OS isn't supported! Please use Mac or Windows.")
-                UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac or Windows.")
+        global SignedIn
+        get_connection = UTILITYFuncs.getConnection("launchApp")
+        if SignedIn == True or get_connection == False:
+            try:
+                if platform.system() == "Windows":
+                    subprocess.Popen(self.exe_location)
+                    UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (windows)")
+            
+                elif platform.system() == "Darwin":
+                    subprocess.run(["open", f"{TruePath}{self.exe_location}"])
+                    killThreads = True
+                    UTILITYFuncs.logAndPrint("INFO", f"App/launchApp: {self.name} was launched. (mac)")
+                    sys.exit()
+                    
+                else:
+                    UTILITYFuncs.logAndPrint("FATAL", "App/launchApp: Your OS isn't supported! Please use Mac or Windows.")
+                    UTILITYFuncs.error("Hey there! Your OS isn't supported! Please use Mac or Windows.")
 
-        except Exception as e:
-            UTILITYFuncs.logAndPrint("INFO", f"UIFuncs/launchJadeAssistant: There was a problem launching {self.name}! {e}")
-            UTILITYFuncs.error(f"There was a problem launching Jade Assistant! {e}")
+            except Exception as e:
+                UTILITYFuncs.logAndPrint("INFO", f"UIFuncs/launchApp: There was a problem launching {self.name}! '{e}'")
+                UTILITYFuncs.error(f"There was a problem launching {self.name}! '{e}'")
+
+        else:
+            UTILITYFuncs.alert("You're not signed in!", "Please sign in to launch apps.")
 
     def downloadApp(self):
         '''Download the app'''
@@ -914,8 +516,8 @@ class App:
 
                 try:
                     UTILITYFuncs.logAndPrint("INFO", f"App/downloadApp: Downloading {self.name}...")
-                    guiLoopList.append(f'jadeDots.showDot("{self.dot_name}")')
-                    guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "Loading...")')
+                    guiLoopList.append(f'jadedots.showDot("{self.dot_name}")')
+                    guiLoopList.append(f'jadedots.setDotPercent("{self.dot_name}", "Loading...")')
 
                     guiLoopList.append('jadeStatus.setStatus("load")')
                     
@@ -939,7 +541,7 @@ class App:
                                 last = percent
                                 guiLoopList.append(f'{self.label_status_loop}.setText("Downloading version {self.newVersion}... [{percent}%]")')
                                 guiLoopList.append(f'window_main.status_bar.setText("Downloading {self.name} {self.newVersion.replace(chr(10), "")}... [{percent}%]")') #chr(10) is a backslash
-                                guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "[{percent}%]")')
+                                guiLoopList.append(f'jadedots.setDotPercent("{self.dot_name}", "[{percent}%]")')
 
                             else:
                                 continue
@@ -977,8 +579,8 @@ class App:
 
                     guiLoopList.append(f'window_main.status_bar.setText("{self.name} was downloaded!")')
                     guiLoopList.append('jadeStatus.setStatus("ok")')
-                    guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "Done!")')
-                    guiLoopList.append(f'jadeDots.hideDot("{self.dot_name}")')
+                    guiLoopList.append(f'jadedots.setDotPercent("{self.dot_name}", "Done!")')
+                    guiLoopList.append(f'jadedots.hideDot("{self.dot_name}")')
 
                 except Exception as e:
                     UTILITYFuncs.logAndPrint("WARN", f"App/downloadApp: There was a problem downloading {self.name}! {e}")
@@ -1014,8 +616,8 @@ class App:
 
                 try:
                     UTILITYFuncs.logAndPrint("INFO", f"App/updateApp: Updating {self.name}...")
-                    guiLoopList.append(f'jadeDots.showDot("{self.dot_name}")')
-                    guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "Loading...")')
+                    guiLoopList.append(f'jadedots.showDot("{self.dot_name}")')
+                    guiLoopList.append(f'jadedots.setDotPercent("{self.dot_name}", "Loading...")')
 
                     self.state = "updating"
                     guiLoopList.append('jadeStatus.setStatus("load")')
@@ -1041,7 +643,7 @@ class App:
                                 last = percent
                                 guiLoopList.append(f'{self.label_status_loop}.setText("Updating to version {self.newVersion.replace(chr(10), "")}... [{percent}%]")') #chr(10) is a backslash
                                 guiLoopList.append(f'window_main.status_bar.setText("Updating {self.name} to {self.newVersion.replace(chr(10), "")}... [{percent}%]")')
-                                guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "[{percent}%]")')
+                                guiLoopList.append(f'jadedots.setDotPercent("{self.dot_name}", "[{percent}%]")')
 
                             else:
                                 continue
@@ -1075,8 +677,8 @@ class App:
                     appVersionFile.close()
 
                     guiLoopList.append(f'window_main.status_bar.setText("{self.name} was updated to {self.newVersion.replace(chr(10), "")}")') #chr(10) is a backslash
-                    guiLoopList.append(f'jadeDots.setDotPercent("{self.dot_name}", "Done!")')
-                    guiLoopList.append(f'jadeDots.hideDot("{self.dot_name}")')
+                    guiLoopList.append(f'jadedots.setDotPercent("{self.dot_name}", "Done!")')
+                    guiLoopList.append(f'jadedots.hideDot("{self.dot_name}")')
                     guiLoopList.append('jadeStatus.setStatus("ok")')
 
                 except Exception as e:
@@ -1348,9 +950,6 @@ class UTILITYFuncs:
         global killThreads
         killThreads = True
         window_main.hide()
-        window_createAccount.hide()
-        window_signIn.hide()
-        window_accountDetails.hide()
         dialog_error.ERROR.setText(Error)
         dialog_error.ERROR.setFont(QFont("Calibri", 14))
         dialog_error.show()
@@ -1387,7 +986,6 @@ class UTILITYFuncs:
 class MAINFuncs:
     '''A Group of functions integral to the Launcher.'''
     global SignedIn
-    global myAccount
     
     def __init__(self):
         pass
@@ -1398,8 +996,6 @@ class MAINFuncs:
         global Version_MAJOR
         global Version_MINOR
         global Version_PATCH
-
-        global myAccount
 
         global news1
         global news2
@@ -1420,12 +1016,14 @@ class MAINFuncs:
 
         global update
 
+        global SignedIn
+
         # That's a lot of global variables :)
 
         from timeit import default_timer as runDuration
         startElapsedTime = runDuration()
 
-        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode: Main code thread started!")
+        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode: Main code started!")
 
         def show_message(text):
             text = text + "\n"
@@ -1449,6 +1047,8 @@ class MAINFuncs:
             else:
                 print("Your OS isn't supported! Please use Windows or Mac.")
                 UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
+
+        # Load Splash screen
         
         # Thanks to Liam on StackOverflow
         # https://stackoverflow.com/questions/58661539/create-splash-screen-in-pyqt5
@@ -1506,7 +1106,6 @@ class MAINFuncs:
         UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Checking for updates...")
         show_message("Checking for updates...")
 
-        # Check for updates
         UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/checkForUpdates: Checking if there's an old update.")
         try:
             os.remove("Jade Launcher.exe.old")
@@ -1592,6 +1191,117 @@ class MAINFuncs:
         else:
             UTILITYFuncs.logAndPrint("WARN", "MAINFuncs/mainCode/checkForUpdates: Skipping checking for updates, as we can't tell if it's turned off or on. '{CONFIG_CheckForUpdates}'")
 
+        # Jade Auth
+        UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/jadeauth: Loading Jade Auth...")
+        if Path("./apps").is_dir() == False:
+            os.mkdir("./apps")
+
+        if Path("./apps/jadeauth").is_dir() == False:
+            os.mkdir("./apps/jadeauth")
+
+        show_message("Loading Jade Auth...")
+        if Path("./apps/jadeauth/Jade Auth.exe.download").is_file():
+            UTILITYFuncs.logAndPrint("INFO", "Jade Auth.exe.download is already present, removing it.")
+            os.remove("./apps/jadeauth/Jade Auth.exe.download")
+
+        try:
+            jadeauth_version_file = open("./apps/jadeauth/JadeAuthVersion.txt")
+            jadeauth_version_file_read = jadeauth_version_file.readlines()
+            jadeauth_version_file.close()
+
+            jadeauth_local_version_major = int(jadeauth_version_file_read[0])
+            jadeauth_local_version_minor = int(jadeauth_version_file_read[1])
+            jadeauth_local_version_patch = int(jadeauth_version_file_read[2])
+
+        except FileNotFoundError:
+            UTILITYFuncs.logAndPrint("INFO", "The Jade Auth Version file does not exist. Has Jade Auth been installed?")
+            # Hacky way LOL
+            jadeauth_local_version_major = 0
+            jadeauth_local_version_minor = 0
+            jadeauth_local_version_patch = 0
+            
+        
+
+        try:
+            jadeauth_version_request = requests.get("https://nfoert.pythonanywhere.com/jadeauth/version")
+            jadeauth_version_request.raise_for_status()
+            jadeauth_version_request.text
+
+        except Exception as e:
+            UTILITYFuncs.logAndPrint("WARN", f"There was a problem getting the Jade Auth version request! '{e}'")
+            if Path("./apps/jadeauth/Jade Auth.exe").is_file():
+                # It exists, so It's ok to skip
+                pass
+
+            else:
+                # Jade Auth doesen't exist, so stuff will break. Best to error out.
+                UTILITYFuncs.error(f"There was a problem getting the Jade Auth version request! '{e}'")
+
+        try:
+            jadeauth_server_version_major = int(UTILITYFuncs.substring(jadeauth_version_request.text, "major=", ",minor"))
+            jadeauth_server_version_minor = int(UTILITYFuncs.substring(jadeauth_version_request.text, "minor=", ",patch"))
+            jadeauth_server_version_patch = int(UTILITYFuncs.substring(jadeauth_version_request.text, "patch=", "&"))
+
+        except Exception as e:
+            UTILITYFuncs.logAndPrint("FATAL", f"There was a problem substringing the Jade Auth Version Request! '{e}'")
+            UTILITYFuncs.error(f"There was a problem substringing the Jade Auth Version Request! '{e}'")
+
+        if jadeauth_local_version_major < jadeauth_server_version_major:
+            jadeauth_update = True
+
+        elif jadeauth_local_version_minor < jadeauth_server_version_minor:
+            jadeauth_update = True
+
+        elif jadeauth_local_version_patch < jadeauth_server_version_patch:
+            jadeauth_update = True
+
+        elif Path("./apps/jadeauth/Jade Auth.exe").is_file() == False:
+            # If Jade Auth is not present should fetch it
+            jadeauth_update = True
+
+        else:
+            jadeauth_update = False
+
+
+        if jadeauth_update == True:
+            # Update Now
+            show_message("Downloading Jade Auth...")
+
+            jadeauth_download = requests.get("https://nfoert.pythonanywhere.com/jadeauth/download", stream=True)
+
+            total_size_in_bytes = int(jadeauth_download.headers.get('content-length', 0))
+            bytes_downloaded = 0
+            last = 0
+
+            with open("./apps/jadeauth/Jade Auth.exe.download", "wb") as file:
+                for data in jadeauth_download.iter_content(1024):
+                    file.write(data)
+                    bytes_downloaded = bytes_downloaded + 1024
+                    percent = bytes_downloaded / total_size_in_bytes
+                    percent = percent * 100
+                    percent = round(percent)
+                    if last != percent:
+                        last = percent
+                        show_message(f"Downloading Jade Auth... [{percent}%]")
+
+            file.close()
+
+            jadeauth_version_file = open("./apps/jadeauth/JadeAuthVersion.txt", "w")
+            jadeauth_version_file.write(f"{jadeauth_server_version_major}\n{jadeauth_server_version_minor}\n{jadeauth_server_version_patch}")
+            jadeauth_version_file.close()
+
+            try:
+                os.remove("./apps/jadeauth/Jade Auth.exe")
+
+            except FileNotFoundError:
+                UTILITYFuncs.logAndPrint("WARN", "Unable to remove Jade Auth.exe after updating. Does it exist?")
+
+            try:
+                os.rename("./apps/jadeauth/Jade Auth.exe.download", "./apps/jadeauth/Jade Auth.exe")
+
+            except FileNotFoundError:
+                UTILITYFuncs.logAndPrint("WARN", "Unable to remove Jade Auth.exe after updating. Does it exist?")
+
 
         # Sign in
         UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/authenticate: Signing in...")
@@ -1601,7 +1311,80 @@ class MAINFuncs:
             gc = UTILITYFuncs.getConnection("mainCode/Authenticate")
             if gc == True:
                 UTILITYFuncs.logAndPrint("INFO", "MAINFuncs/mainCode/authenticate: Signing in...")
-                myAccount.Authenticate()
+                try:
+                    account_file = config.Config("./apps/account")
+
+                    subprocess.Popen(["./apps/jadeauth/Jade Auth.exe", "signin"])
+
+                    while True:
+                        try:
+                            status = account_file.getValue("status")
+
+                        except config.UnableToGetValue:
+                            sleep(0.1)
+                            continue
+
+                        if status == "loading":
+                            sleep(0.1)
+                        
+                        elif status == "failed":
+                            UTILITYFuncs.alert("There was a problem signing in!", "There was a problem signing in!")
+
+                            window_main.account_label.setText("Not signed in.")
+                            window_main.account_label.setStyleSheet("color: red")
+                            window_main.account_letter.setText("")
+                            SignedIn = False
+                            break
+
+                        elif status == "notsignedin":
+                            sleep(0.1)
+                            if "Jade Auth.exe" in (p.name for p in psutil.process_iter()):
+                                continue
+
+                            else:
+                                UTILITYFuncs.logAndPrint("INFO", "Jade Auth has closed.")
+                                window_main.account_label.setText("Not signed in.")
+                                window_main.account_label.setStyleSheet("color: red")
+                                window_main.account_letter.setText("")
+                                SignedIn = False
+                                break
+
+                        elif status == "done":
+                            UTILITYFuncs.logAndPrint("INFO", "Signed in")
+                            username = account_file.getValue("username")
+
+                            if username == "":
+                                window_main.account_label.setText("Not signed in.")
+                                window_main.account_label.setStyleSheet("color: red")
+                                window_main.account_letter.setText("")
+                                SignedIn = False
+
+                            else:
+                                window_main.account_label.setText(f"Hello, {username}")
+                                window_main.account_label.setStyleSheet("color: green")
+                                window_main.account_letter.setText(username[0])
+                                SignedIn = True
+
+
+                            status = account_file.getValue("status")
+                            suspended = account_file.getValue("suspended")
+                            
+                            if status != "notsignedin":
+                                if suspended == "no":
+                                    UTILITYFuncs.logAndPrint("INFO", "Your account isn't suspended!")
+
+                                else:
+                                    UTILITYFuncs.logAndPrint("INFO", f"Your account is suspended for '{suspended}'")
+
+                                break
+
+
+                except FileNotFoundError:
+                    window_main.account_label.setText("Not signed in.")
+                    window_main.account_label.setStyleSheet("color: red")
+                    window_main.account_letter.setText("")
+                    SignedIn = False
+                    UTILITYFuncs.error("Jade Auth.exe could not be found!")
 
             elif gc == False:
                 UTILITYFuncs.logAndPrint("NOT CONNECTED", "MAINFuncs/mainCode/authenticate: Skipping signing in as you're not connected.")
@@ -1858,8 +1641,15 @@ class MAINFuncs:
         # Update Id
         UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/updateLauncherId: Updating Launcher Id...")
         show_message("Updating Launcher ID...")
+        account_file = config.Config("./apps/account")
+        try:
+            username = account_file.getValue("username")
+
+        except config.UnableToGetValue:
+            username = "notsignedin"
+
         Launcher.getId()
-        Launcher.username = myAccount.username
+        Launcher.username = username
         Launcher.updateStatus()
 
         # Set greeting
@@ -1947,7 +1737,17 @@ class MAINFuncs:
                 window_status.jadeLauncher_install.hide()
 
         # Check for suspension
-        if myAccount.suspended == "no":
+        account_file = config.Config("./apps/account")
+        try:
+            suspended = account_file.getValue("suspended")
+        
+        except config.UnableToGetValue:
+            suspended = "no"
+
+        status = account_file.getValue("status")
+
+        
+        if suspended == "no" or status == "notsignedin":
             UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/suspensionCheck: Not suspended.")
             show_message("Done!")
             sleep(1.5)
@@ -1962,7 +1762,7 @@ class MAINFuncs:
 
             try:
                 introConfig = jadelauncher_config.getValue("intro")
-            
+
             except config.UnableToGetValue:
                 jadelauncher_config.setValue("intro", "true")
                 introConfig = "true"
@@ -2033,7 +1833,8 @@ class MAINFuncs:
         else:
             UTILITYFuncs.logAndPrint("INFO", "THREADFuncs/mainCode/suspensionCheck: Suspended.")
             window_splash.hide()
-            dialog_accountSuspended.show()
+            window_main.hide()
+            UTILITYFuncs.alert("You're suspended!", f"Your Jade Account is suspended for {suspended}")
 
         elapsedTime = runDuration() - startElapsedTime
         elapsedTime = round(elapsedTime)
@@ -2088,34 +1889,10 @@ class UIFuncs:
         
 
     # Main Screen
-    def openAccountScreen():
-        gc = UTILITYFuncs.getConnection("openAccountScreen")
-        if gc == True:
-            if SignedIn == True:
-                window_accountDetails.show()
-
-            elif SignedIn == False:
-                window_signIn.show()
-
-            else:
-                UTILITYFuncs.logAndPrint("INFO", "UIFuncs/openAccountScreen: There was a problem checking if you're signed in or not to open the Account screen.")
-
-        elif gc == False:
-            UTILITYFuncs.logAndPrint("INFO", "UIFuncs/openAccountScreen: You're not connected!")
-
-        else:
-            UTILITYFuncs.logAndPrint("INFO", "UIFuncs/openAccountScreen: Unable to determine connectivity.")
-
     def stopAll():
         global killThreads
         killThreads = True
         sys.exit()
-
-    def signInButton():
-        myAccount.signIn()
-
-    def signOutButton():
-        myAccount.signOut()
 
     def jadeAssistantButton():
         global SignedIn
@@ -2143,63 +1920,10 @@ class UIFuncs:
             else:
                 UTILITYFuncs.alert("You're not signed in!", "Connnect to internet, restart the Launcher, sign in, then try again.")
 
-    def switchToCreateAccount():
-        window_signIn.usernameBox_edit.clear()
-        window_signIn.passwordBox_edit.clear()
-
-        window_signIn.hide()
-        window_createAccount.show()
-
-    def switchToSignIn():
-        window_createAccount.hide()
-        window_signIn.show()
-
-    def passwordToggle():
-        state = window_signIn.passwordBox_show.checkState()
-        if state == 2:
-            #checked
-            window_signIn.passwordBox_edit.setEchoMode(0)
-
-
-        elif state == 0:
-            #not checked
-            window_signIn.passwordBox_edit.setEchoMode(2)
-
-        else:
-            UTILITYFuncs.logAndPrint("WARN", "UIFuncs/passwordToggle: There was a problem setting show/hide password.")
-
-    def createAccountButton():
-        global myAccount
-        myAccount.createAccount()
-
     def suspendedQuit():
         global killThreads
         killThreads = True
         sys.exit()
-
-    def suspendedLogOut():
-        global myAccount
-        myAccount.signOut()
-        window_main.show()
-        dialog_accountSuspended.hide()
-
-    def expandNews1():
-        global news1
-        global expanded
-        expanded = "1"
-        news1.expand()
-
-    def expandNews2():
-        global news2
-        global expanded
-        expanded = "2"
-        news2.expand()
-
-    def expandNews3():
-        global news3
-        global expanded
-        expanded = "3"
-        news3.expand()
 
     def openChangelog():
         if platform.system() == "Windows":
@@ -2210,28 +1934,6 @@ class UIFuncs:
 
         else:
             UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
-
-    #Expanded news
-    def openUrlButton():
-        global expanded
-        global news1
-        global news2
-        global news3
-
-        if expanded == "0":
-            UTILITYFuncs.logAndPrint("WARN", "UIFuncs/openUrlButton: There was a problem expanding news. Nothing is actually expanded?")
-
-        elif expanded == "1":
-            news1.openUrl()
-
-        elif expanded == "2":
-            news2.openUrl()
-
-        elif expanded == "3":
-            news3.openUrl()
-
-        else:
-            UTILITYFuncs.logAndPrint("WARN", "UIFuncs/openUrlButton: There was a problem determining what news article to open a url for.")
 
     def quitErrorDialog():
         global killThreads
@@ -2273,25 +1975,6 @@ class UIFuncs:
             UTILITYFuncs.logAndPrint("INFO", "UIFuncs/aboutLogButton: Your OS isn't supported! Please use Windows or Mac.")
             UTILITYFuncs.error("Your OS isn't supported! Please use Windows or Mac.")
 
-    def openChangePassword():
-        window_accountDetails.hide()
-        global myAccount
-        try:
-            createVerificationCode = requests.get(f"https://nfoert.pythonanywhere.com/jadeCore/createVerificationCode?username={myAccount.username},password={myAccount.password}&")
-            createVerificationCode.raise_for_status()
-            print(createVerificationCode.text)
-            window_changePassword.label.setText(f"We just sent a verification code to {myAccount.email}. Please enter it below.")
-            window_changePassword.label.setFont(QFont("Calibri", 8))
-            window_changePassword.label.setAlignment(QtCore.Qt.AlignCenter)
-            window_changePassword.show()
-
-        except Exception as e:
-            UTILITYFuncs.logAndPrint("WARN", f"UIFuncs/openChangePassword: There was a problem creating a verification code. '{e}'")
-            UTILITYFuncs.alert("There was a problem creating a verification code.", f"{e}")
-
-    def changePassword():
-        myAccount.changePassword()
-
     # App Functions
     def launchApp():
         global selectedApp
@@ -2332,19 +2015,12 @@ class UIFuncs:
         global debugOpenAllWindows
         if debugOpenAllWindows == True:
             UTILITYFuncs.logAndPrint("DEBUG", "Opening all windows! (Much chaos ahead, beware!)")
-            window_accountDetails.show()
             window_offline.show()
-            window_changePassword.show()
-            window_createAccount.show()
-            window_changePassword.show()
             window_main.show()
-            window_signIn.show()
             UTILITYFuncs.alert("Debug: Show all windows!", "This window was opened to assist in UI related debug related to apperances. test test test test test test test test test test test test test test test test test test thank you")
             window_update.show()
             dialog_about.show()
-            dialog_accountSuspended.show()
             dialog_error.show()
-            dialog_signInFailure.show()
             if platform.system() == "Windows":
                 window_webView.show()
 
@@ -2389,6 +2065,7 @@ class UIFuncs:
         # Get values
         introConfig = jadelauncher_config.getValue("intro")
         newConfig = jadelauncher_config.getValue("new")
+        simpleConfig = jadelauncher_config.getValue("simple")
 
         # Set checkboxes
         if introConfig == "true":
@@ -2409,6 +2086,15 @@ class UIFuncs:
         else:
             UTILITYFuncs.logAndPrint("WARN", "Config: 'new' value not recognized")
 
+        if simpleConfig == "true":
+            window_settings.simple.setChecked(True)
+
+        elif simpleConfig == "false":
+            window_settings.simple.setChecked(False)
+
+        else:
+            UTILITYFuncs.logAndPrint("WARN", "Config: 'simple' value not recognized")
+
 
         # Show window
         window_settings.show()
@@ -2423,6 +2109,12 @@ class UIFuncs:
 
         if window_settings.newScreen.isChecked():
             jadelauncher_config.setValue("new", "true")
+
+        else:
+            jadelauncher_config.setValue("new", "false")
+
+        if window_settings.simple.isChecked():
+            jadelauncher_config.setValue("simple", "true")
 
         else:
             jadelauncher_config.setValue("new", "false")
@@ -2508,6 +2200,70 @@ class UIFuncs:
             
         else:
             UTILITYFuncs.logAndPrint("INFO", "Not uninstalling the Jade Launcher.")
+
+    def open_account_screen():
+        global SignedIn
+
+        try:
+            account_file = config.Config("./apps/account")
+
+            subprocess.Popen(["./apps/jadeauth/Jade Auth.exe", "signin_window"])
+
+            while True:
+                try:
+                    status = account_file.getValue("status")
+
+                except config.UnableToGetValue:
+                    sleep(0.1)
+                    continue
+
+                if status == "loading":
+                    sleep(0.1)
+
+                elif status == "failed":
+                    UTILITYFuncs.alert("There was a problem signing in!", "There was a problem signing in!")
+                    window_main.account_label.setText("Not signed in.")
+                    window_main.account_label.setStyleSheet("color: red")
+                    window_main.account_letter.setText("")
+                    SignedIn = False
+                    break
+
+                elif status == "notsignedin":
+                    sleep(0.1)
+                    if "./apps/jadeauth/Jade Auth.exe" in (p.name for p in psutil.process_iter()):
+                        continue
+
+                    else:
+                        UTILITYFuncs.logAndPrint("INFO", "Jade Auth has closed.")
+                        window_main.account_label.setText("Not signed in.")
+                        window_main.account_label.setStyleSheet("color: red")
+                        window_main.account_letter.setText("")
+                        SignedIn = False
+                        break
+
+                elif status == "done":
+                    UTILITYFuncs.logAndPrint("INFO", "Signed in")
+                    username = account_file.getValue("username")
+
+                    if username == "":
+                        window_main.account_label.setText("Not signed in.")
+                        window_main.account_label.setStyleSheet("color: red")
+                        window_main.account_letter.setText("")
+                        SignedIn = False
+
+                    else:
+                        window_main.account_label.setText(f"Hello, {username}")
+                        window_main.account_label.setStyleSheet("color: green")
+                        window_main.account_letter.setText(username[0])
+                        SignedIn = True
+
+                    break
+
+
+
+        except FileNotFoundError:
+            UTILITYFuncs.error("Jade Auth.exe could not be found!")
+
         
 
     # -----
@@ -2613,11 +2369,11 @@ def downloadUpdateThread():
             continue
 
 
-def installUpdateThread():
+def install_update_thread():
     global installUpdateVar
     global killThreads
     global cancelInstallUpdateVar
-    UTILITYFuncs.logAndPrint("INFO", "Threads/installUpdateThread: Thread started.")
+    UTILITYFuncs.logAndPrint("INFO", "Threads/install_update_thread: Thread started.")
 
     while True:
         if installUpdateVar == True:
@@ -2628,7 +2384,7 @@ def installUpdateThread():
             guiLoopList.append('window_status.jadeLauncher_cancel.show()')
             for i in range(5, 0, -1): #Counts down. range(start, end, step) Thanks to Burger King's answer here: https://stackoverflow.com/questions/29292133/how-to-count-down-in-for-loop
                 if cancelInstallUpdateVar == True:
-                    UTILITYFuncs.logAndPrint("INFO", "Threads/installUpdateThread: Canceling the installing of the Jade Launcher update.")
+                    UTILITYFuncs.logAndPrint("INFO", "Threads/install_update_thread: Canceling the installing of the Jade Launcher update.")
                     guiLoopList.append('window_status.jadeLauncher_download.hide()')
                     guiLoopList.append('window_status.jadeLauncher_install.show()')
                     guiLoopList.append('window_status.jadeLauncher_cancel.hide()')
@@ -2642,7 +2398,7 @@ def installUpdateThread():
                     sleep(1)
 
             if cancel == True:
-                UTILITYFuncs.logAndPrint("INFO", "Threads/installUpdateThread: Not installing update, as it was canceled.")
+                UTILITYFuncs.logAndPrint("INFO", "Threads/install_update_thread: Not installing update, as it was canceled.")
 
             else:
                 guiLoopList.append('window_status.jadeLauncher_cancel.hide()')
@@ -2661,9 +2417,9 @@ def installUpdateThread():
                 DETACHED_PROCESS = 0x00000008
 
                 try:
-                    subprocess.Popen("Jade Launcher.exe", creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP) #TODO: BROKEN IDK WHY HELP HELP HELP
+                    subprocess.Popen("Jade Launcher.exe", creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
                     installUpdateVar = False
-                    guiLoopList.append('app.closeAllWindows()') #FIXME: IT"S ALL A MESS BROKEN NOT WORKING ASDHFJKHAJKFJKASDHFKJKA
+                    guiLoopList.append('app.closeAllWindows()')
                     guiLoopList.append('app.quit()')
                     sys.exit()
                 
@@ -2676,8 +2432,8 @@ def installUpdateThread():
             sleep(0.1)
             continue
 
-def checkForRunningAppsThread(): # TODO: Coming in 2.1.0
-    print("Threads:/checkForRunningAppsThread: Thread started.")
+def check_for_running_apps_thread(): # TODO: Coming in 2.1.0
+    print("Threads:/check_for_running_apps_thread: Thread started.")
     while True:
         # Thanks to https://thispointer.com/python-check-if-a-process-is-running-by-name-and-find-its-process-id-pid/
         # and Mark's answer here: https://stackoverflow.com/questions/7787120/check-if-a-process-is-running-or-not-on-windows
@@ -2708,17 +2464,52 @@ def checkForRunningAppsThread(): # TODO: Coming in 2.1.0
                 guiLoopList.append('window_status.jadeApps_remove.show()')
                 guiLoopList.append('window_status.jadeApps_stop.hide()')
 
+def update_account_label_thread():
+    '''Nasty solution to fix the problem of the account label not updating when you sign in or out. Added in 2.2.0 on 6/20/23'''
+    global SignedIn
+    UTILITYFuncs.logAndPrint("INFO", "Threads:/update_account_label_thread: Thread started.")
+    account_file = config.Config("./apps/account")
+    while True:
+        try:
+            username = account_file.getValue("username")
+        except config.UnableToGetValue:
+            account_file.setValue("username", "")
+            username = ""
+        
+        if username == "":
+            guiLoopList.append('window_main.account_label.setText("Not signed in.")')
+            guiLoopList.append('window_main.account_label.setStyleSheet("color: red")')
+            guiLoopList.append('window_main.account_letter.setText("")')
+            SignedIn = False
+
+        else:
+            guiLoopList.append(f'window_main.account_label.setText("Hello, {username}")')
+            guiLoopList.append('window_main.account_label.setStyleSheet("color: green")')
+            guiLoopList.append(f'window_main.account_letter.setText("{username[0]}")')
+            SignedIn = True  
+
+        sleep(3)
+
+
 
 # Start threads
 downloadUpdateManager = threading.Thread(target=downloadUpdateThread, daemon=True)
 downloadUpdateManager.start()
 
-installUpdateManager = threading.Thread(target=installUpdateThread, daemon=True)
+installUpdateManager = threading.Thread(target=install_update_thread, daemon=True)
 installUpdateManager.start()
 
-checkForRunningAppsThreadManager = threading.Thread(target=checkForRunningAppsThread, daemon=True)
+checkForRunningAppsThreadManager = threading.Thread(target=check_for_running_apps_thread, daemon=True)
 #checkForRunningAppsThreadManager.start() TODO: Coming in 2.1.0
 
+update_account_label_thread_manager = threading.Thread(target=update_account_label_thread, daemon=True)
+config_file = config.Config("jadeLauncherConfig")
+try:
+    if config_file.getValue("simple") == "false":
+        update_account_label_thread_manager.start()
+
+except config.UnableToGetValue:
+    config_file.setValue("simple", "false")
     
 
 # ----------
@@ -2747,11 +2538,8 @@ if developmental == False:
     UTILITYFuncs.logAndPrint("INFO", "PyQt5: Loading like it's an executable.")
     # Load like an exe
     try:
-        window_accountDetails = uic.loadUi(str(PurePath(resource_path("accountDetails.ui"))))
-        window_createAccount = uic.loadUi(str(PurePath(resource_path("createAccount.ui"))))
         window_main = uic.loadUi(str(PurePath(resource_path("main.ui"))))
         window_offline = uic.loadUi(str(PurePath(resource_path("offline.ui"))))
-        window_signIn = uic.loadUi(str(PurePath(resource_path("signIn.ui"))))
 
         if platform.system() == "Windows":
             window_webView = uic.loadUi(str(PurePath(resource_path("webView.ui"))))
@@ -2759,13 +2547,10 @@ if developmental == False:
         else:
             UTILITYFuncs.logAndPrint("INFO", 'Not using PyQtWebEngine because it is mac os')
 
-        window_changePassword = uic.loadUi(str(PurePath(resource_path("changePassword.ui"))))
         window_update = uic.loadUi(str(PurePath(resource_path("update.ui"))))
         window_status = uic.loadUi(str(PurePath(resource_path("appStatus.ui"))))
         window_settings = uic.loadUi(str(PurePath(resource_path("settings.ui"))))
         window_new = uic.loadUi(str(PurePath(resource_path("new.ui"))))
-        dialog_signInFailure = uic.loadUi(str(PurePath(resource_path("signInFailure.ui"))))
-        dialog_accountSuspended = uic.loadUi(str(PurePath(resource_path("accountSuspended.ui"))))
         dialog_error = uic.loadUi(str(PurePath(resource_path("error.ui"))))
         dialog_about = uic.loadUi(str(PurePath(resource_path("about.ui"))))
         dialog_alert = uic.loadUi(str(PurePath(resource_path("alert.ui"))))
@@ -2778,11 +2563,8 @@ elif developmental == True:
     UTILITYFuncs.logAndPrint("INFO", "PyQt5: Loading like it's a .py")
     # Load for development
     try:
-        window_accountDetails = uic.loadUi(str(PurePath("ui/accountDetails.ui")))
-        window_createAccount = uic.loadUi(str(PurePath("ui/createAccount.ui")))
         window_main = uic.loadUi(str(PurePath("ui/main.ui")))
         window_offline = uic.loadUi(str(PurePath("ui/offline.ui")))
-        window_signIn = uic.loadUi(str(PurePath("ui/signIn.ui")))
 
         if platform.system() == "Windows":
             window_webView = uic.loadUi(str(PurePath("ui/webView.ui")))
@@ -2790,13 +2572,10 @@ elif developmental == True:
         elif platform.system() == "Darwin":
             UTILITYFuncs.logAndPrint("INFO", "Not creating the webview window because you're on mac os")
 
-        window_changePassword = uic.loadUi(str(PurePath("ui/changePassword.ui")))
         window_update = uic.loadUi(str(PurePath("ui/update.ui")))
         window_status = uic.loadUi(str(PurePath("ui/appStatus.ui")))
         window_settings = uic.loadUi(str(PurePath("ui/settings.ui")))
         window_new = uic.loadUi(str(PurePath("ui/new.ui")))
-        dialog_signInFailure = uic.loadUi(str(PurePath("ui/signInFailure.ui")))
-        dialog_accountSuspended = uic.loadUi(str(PurePath("ui/accountSuspended.ui")))
         dialog_error = uic.loadUi(str(PurePath("ui/error.ui")))
         dialog_about = uic.loadUi(str(PurePath("ui/about.ui")))
         dialog_alert = uic.loadUi(str(PurePath("ui/alert.ui")))
@@ -2834,12 +2613,9 @@ window_offline.button.clicked.connect(UIFuncs.closeOffline)
 window_offline.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
 
 # Main Screen
-window_main.account_button.clicked.connect(UIFuncs.openAccountScreen)
+window_main.account_button.clicked.connect(UIFuncs.open_account_screen)
 #window_main.leftBox_jadeBarButton.clicked.connect(UIFuncs.openJadeBar)
 #window_main.leftBox_plusButton.clicked.connect(UIFuncs.openPlus)
-window_main.button1.clicked.connect(UIFuncs.expandNews1)
-window_main.button2.clicked.connect(UIFuncs.expandNews2)
-window_main.button3.clicked.connect(UIFuncs.expandNews3)
 window_main.changelogsButton.clicked.connect(UIFuncs.openChangelog)
 window_main.statusButton.clicked.connect(UIFuncs.openStatus)
 window_main.jadeAssistant_status.clicked.connect(UIFuncs.openStatus)
@@ -2851,24 +2627,6 @@ window_main.settingsButton.clicked.connect(UIFuncs.settingsButton)
 
 window_main.jadeAssistant_launch.hide()
 window_main.jadeApps_launch.hide()
-
-# Sign In Screen
-window_signIn.signInBox_button.clicked.connect(UIFuncs.signInButton)
-window_signIn.switchWindowBox_button.clicked.connect(UIFuncs.switchToCreateAccount)
-window_signIn.passwordBox_show.stateChanged.connect(UIFuncs.passwordToggle)
-window_signIn.signInBox_button.setShortcut("Return")
-
-# Account details
-window_accountDetails.buttonsBox_signOut.clicked.connect(UIFuncs.signOutButton)
-window_accountDetails.buttonsBox_changePassword.clicked.connect(UIFuncs.openChangePassword)
-
-# Create Account
-window_createAccount.switchWindowBox_button.clicked.connect(UIFuncs.switchToSignIn)
-window_createAccount.mainBox_button.clicked.connect(UIFuncs.createAccountButton)
-
-# Account suspended dialog
-dialog_accountSuspended.logOut.clicked.connect(UIFuncs.suspendedLogOut)
-dialog_accountSuspended.quit.clicked.connect(UIFuncs.suspendedQuit)
 
 # Error dialog
 dialog_error.QUIT.clicked.connect(UIFuncs.quitErrorDialog)
@@ -2893,9 +2651,6 @@ dialog_about.version.setFont(QFont("Calibri", 16))
 dialog_about.version.setAlignment(QtCore.Qt.AlignLeft)
 dialog_about.button.clicked.connect(UIFuncs.aboutWebsiteButton)
 dialog_about.logButton.clicked.connect(UIFuncs.aboutLogButton)
-
-# Change Password Window
-window_changePassword.button.clicked.connect(UIFuncs.changePassword)
 
 # Update menu
 window_update.update.clicked.connect(UIFuncs.goToLauncherUpdate)
@@ -2987,7 +2742,7 @@ def killCheck():
 
     if killThreads == True:
         print("DIE, FOOLISH THREADS")
-        jadeDots.kill()
+        jadedots.kill()
 
 
 if doMain == True:
@@ -2998,8 +2753,6 @@ if doMain == True:
     #killCheckTimer = QTimer()
     #killCheckTimer.timeout.connect(killCheck)
     #killCheckTimer.start(1)
-
-    myAccount = Account("False", "no", "loading...")
 
     news1 = News("loading", "loading", "loading", "loading", "1", "loading")
     news2 = News("loading", "loading", "loading", "loading", "2", "loading")
@@ -3013,7 +2766,7 @@ if doMain == True:
         "path": "Jade Assistant",
         "version": "Loading...",
         "download_folder": "./apps/jadeassistant",
-        "download_url": "https://github.com/nfoert/jadeassistant/raw/main/Jade%20Assistant.exe",
+        "download_url": "https://nfoert.pythonanywhere.com/jadeAssistant/download",
         "exe_location": "./apps/jadeassistant/Jade Assistant.exe",
         "version_file_location": "./apps/jadeassistant/JadeAssistantVersion.txt",
         "version_url": "https://nfoert.pythonanywhere.com/jadeAssistant/jadeAssistantVersion",
@@ -3040,7 +2793,7 @@ if doMain == True:
         "path": "Jade Apps",
         "version": "Loading...",
         "download_folder": "./apps/jadeapps",
-        "download_url": "https://github.com/nfoert/jadeapps/raw/main/Jade%20Apps.exe",
+        "download_url": "https://nfoert.pythonanywhere.com/jadeapps/download",
         "exe_location": "./apps/jadeapps/Jade Apps.exe",
         "version_file_location": "./apps/jadeapps/JadeAppsVersion.txt",
         "version_url": "https://nfoert.pythonanywhere.com/jadeapps/jadeAppsVersion",
@@ -3086,7 +2839,7 @@ if doMain == True:
     JadeApps_UpdateThread.start()
     JadeApps_DownloadThread.start()
 
-    jadeDots.init(guiLoopList, window_main, developmental, screen, dot_jadeAssistantDownload, dot_jadeAppsDownload)
+    jadedots.init(guiLoopList, window_main, developmental, screen, dot_jadeAssistantDownload, dot_jadeAppsDownload)
     jadeStatus.init(window_main, developmental, resource_path)    
 
     jadeStatus.setStatus("ok")

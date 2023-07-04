@@ -1,0 +1,176 @@
+
+[6/19/2023] [12:57:56] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [12:57:57] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [12:57:57] |WARN| >>> There was a problem signing you in. 'There was a problem.'
+[6/19/2023] [12:58:31] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [12:58:32] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [12:58:32] |WARN| >>> There was a problem signing you in. 'There was a problem.'
+[6/19/2023] [12:59:27] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [12:59:28] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [12:59:28] |WARN| >>> There was a problem signing you in. 'There was a problem.'
+[6/19/2023] [12:59:59] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [13:0:0] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [13:0:1] |WARN| >>> There was a problem signing you in. 'There was a problem.'
+[6/19/2023] [13:0:35] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [13:0:38] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [13:0:40] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [13:0:45] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [13:0:45] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [13:0:47] |WARN| >>> There was a problem signing you in. 'There's no account that matches that username and password.'
+[6/19/2023] [13:1:28] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [13:1:29] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [13:1:29] |WARN| >>> There was a problem signing you in. 'There was a problem.'
+[6/19/2023] [13:1:35] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [13:1:36] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [13:1:37] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [13:1:44] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [13:1:45] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [13:1:46] |WARN| >>> There was a problem signing you in. 'There's no account that matches that username and password.'
+[6/19/2023] [13:1:48] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [13:1:48] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [13:1:49] |WARN| >>> There was a problem signing you in. 'There's no account that matches that username and password.'
+[6/19/2023] [13:2:12] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [13:2:12] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [13:2:13] |WARN| >>> There was a problem signing you in. 'There's no account that matches that username and password.'
+[6/19/2023] [13:4:25] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [13:4:25] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [13:4:26] |WARN| >>> There was a problem signing you in. 'There was a problem.'
+[6/19/2023] [13:5:8] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [13:5:9] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [13:5:12] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [13:5:37] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [13:5:37] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [13:5:38] |WARN| >>> There was a problem signing you in. 'There's no account that matches that username and password.'
+[6/19/2023] [14:9:16] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [14:9:16] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [14:14:5] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [14:14:6] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [14:14:6] |INFO| >>> nfoert
+[6/19/2023] [14:17:1] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [14:17:2] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [14:17:2] |INFO| >>> nfoert
+[6/19/2023] [14:17:2] |INFO| >>> False
+[6/19/2023] [14:17:3] |INFO| >>> The user has been signed out.
+[6/19/2023] [14:18:47] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [14:18:47] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [14:18:47] |INFO| >>> 
+[6/19/2023] [14:18:47] |INFO| >>> 
+[6/19/2023] [14:18:48] |WARN| >>> There was a problem signing you in. 'There was a problem.'
+[6/19/2023] [14:28:25] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [14:28:26] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [14:28:26] |INFO| >>> 'nfoert'
+[6/19/2023] [14:28:26] |INFO| >>> 'nfbobby23'
+[6/19/2023] [14:28:27] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [14:30:27] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [14:30:28] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [14:30:28] |INFO| >>> 'nfoert'
+[6/19/2023] [14:30:28] |INFO| >>> 'nfbobby23'
+[6/19/2023] [14:30:30] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [14:30:56] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [14:30:57] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [14:30:57] |INFO| >>> 'loading'
+[6/19/2023] [14:30:57] |INFO| >>> 'loading'
+[6/19/2023] [14:30:59] |WARN| >>> There was a problem signing you in. 'There was a problem.'
+[6/19/2023] [14:33:38] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [14:33:39] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [14:33:39] |INFO| >>> 'nfoert'
+[6/19/2023] [14:33:39] |INFO| >>> 'nfbobby23'
+[6/19/2023] [14:33:40] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [14:34:26] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [14:34:27] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [14:34:27] |INFO| >>> 'nfoert'
+[6/19/2023] [14:34:27] |INFO| >>> 'nfbobby23'
+[6/19/2023] [14:34:27] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [20:39:56] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [20:39:57] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [20:39:57] |INFO| >>> 'nfoert'
+[6/19/2023] [20:39:57] |INFO| >>> 'nfbobby23'
+[6/19/2023] [20:39:59] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [20:40:1] |INFO| >>> The user has been signed out.
+[6/19/2023] [20:40:30] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [20:40:31] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [20:40:31] |INFO| >>> 'nfoert'
+[6/19/2023] [20:40:31] |INFO| >>> 'nfbobby23'
+[6/19/2023] [20:40:32] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [21:15:52] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:15:54] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:15:54] |INFO| >>> 'loading'
+[6/19/2023] [21:15:54] |INFO| >>> 'loading'
+[6/19/2023] [21:15:58] |WARN| >>> There was a problem signing you in. 'There was a problem.'
+[6/19/2023] [21:16:4] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:16:9] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:16:9] |INFO| >>> 'loading'
+[6/19/2023] [21:16:9] |INFO| >>> 'loading'
+[6/19/2023] [21:16:12] |WARN| >>> There was a problem signing you in. 'There was a problem.'
+[6/19/2023] [21:20:23] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:20:25] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:20:25] |INFO| >>> 'loading'
+[6/19/2023] [21:20:25] |INFO| >>> 'loading'
+[6/19/2023] [21:20:26] |WARN| >>> There was a problem signing you in. 'There was a problem.'
+[6/19/2023] [21:25:14] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:25:14] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:25:16] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:25:16] |INFO| >>> 'loading'
+[6/19/2023] [21:25:16] |INFO| >>> 'loading'
+[6/19/2023] [21:25:17] |WARN| >>> There was a problem signing you in. 'There was a problem.'
+[6/19/2023] [21:27:15] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:27:19] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:27:39] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:27:40] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:27:41] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:27:43] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:27:44] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:27:45] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:29:37] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:29:44] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:29:47] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:29:47] |INFO| >>> 'nfoert'
+[6/19/2023] [21:29:47] |INFO| >>> 'nfbobby23'
+[6/19/2023] [21:29:50] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [21:30:24] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:30:24] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:30:24] |INFO| >>> 'nfoert'
+[6/19/2023] [21:30:24] |INFO| >>> 'nfbobby23'
+[6/19/2023] [21:30:25] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [21:30:27] |INFO| >>> Signing the user out...
+[6/19/2023] [21:30:27] |INFO| >>> The user has been signed out.
+[6/19/2023] [21:30:30] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:30:37] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:30:37] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:30:37] |INFO| >>> 'nfoert'
+[6/19/2023] [21:30:37] |INFO| >>> 'nfbobby23'
+[6/19/2023] [21:30:38] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [21:30:40] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:30:41] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:30:41] |INFO| >>> 'nfoert'
+[6/19/2023] [21:30:41] |INFO| >>> 'nfbobby23'
+[6/19/2023] [21:30:41] |INFO| >>> User nfoert has signed in.
+[6/19/2023] [21:30:52] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:31:14] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:31:14] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:31:15] |INFO| >>> Account for nfoerttestsss has been created.
+[6/19/2023] [21:31:19] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:35:0] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:35:9] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:35:9] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:35:18] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:35:18] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:35:19] |INFO| >>> Account for fnjkashfjkasd has been created.
+[6/19/2023] [21:35:19] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:35:20] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:35:20] |INFO| >>> 'fnjkashfjkasd'
+[6/19/2023] [21:35:20] |INFO| >>> 'fasdfasdfasdfasdffahjklhjkasdfhjkafkhja'
+[6/19/2023] [21:35:21] |INFO| >>> User fnjkashfjkasd has signed in.
+[6/19/2023] [21:35:24] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:35:25] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:35:25] |INFO| >>> 'fnjkashfjkasd'
+[6/19/2023] [21:35:25] |INFO| >>> 'fasdfasdfasdfasdffahjklhjkasdfhjkafkhja'
+[6/19/2023] [21:35:25] |INFO| >>> User fnjkashfjkasd has signed in.
+[6/19/2023] [21:35:30] |INFO| >>> Signing the user out...
+[6/19/2023] [21:35:30] |INFO| >>> The user has been signed out.
+[6/19/2023] [21:35:38] |WARN| >>> Username or password is 'loading'!
+[6/19/2023] [21:35:42] |INFO| >>> UtilityFuncs/getConnection: Getting Connection Status...
+[6/19/2023] [21:35:43] |INFO| >>> UtilityFuncs/getConnection: You're connected!
+[6/19/2023] [21:35:43] |INFO| >>> 'nfoert'
+[6/19/2023] [21:35:43] |INFO| >>> 'nfbobby23'
+[6/19/2023] [21:35:43] |INFO| >>> User nfoert has signed in.
