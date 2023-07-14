@@ -35,13 +35,6 @@ jobs:
       with:
         age: '5 minutes' # '<number> <unit>', e.g. 5 days, 2 years, 90 seconds, parsed by Moment.js
         
-  create-installer:
-    runs-on: ubuntu-latest
-  
-    steps:
-    - name: Create InnoSetup Installer
-      uses: nadeemjazmawe/inno-setup-action-cli@v6.0.5
-      with: 
-        filepath: 'installerFile.iss'
+
         
     
