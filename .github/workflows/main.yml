@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-windows-binary:
 
     runs-on: ubuntu-latest
 
@@ -24,6 +24,26 @@ jobs:
       with:
         name: Jade Launcher.exe
         path: dist
+        
+  build-linux-binary:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Package Application
+      uses: JackMcKew/pyinstaller-action-linux@main
+      with:
+        path: ./
+        spec: newJadeLauncherWINDOWS.spec
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: Jade Launcher
+        path: dist
+        
+  
         
   remove-old-artifacts:
     runs-on: ubuntu-latest
