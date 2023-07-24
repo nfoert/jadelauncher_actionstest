@@ -52,7 +52,7 @@ jobs:
     - name: Package with PyInstaller
       run: |
         source venv/bin/activate
-        pyinstaller spec_file.spec
+        pyinstaller newJadeLauncherWINDOWS.spec
         
     - name: Upload .exe as an artifact
       uses: actions/upload-artifact@v2
