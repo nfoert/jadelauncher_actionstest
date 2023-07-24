@@ -21,3 +21,4 @@ pywin32-ctypes==0.2.0
 requests==2.28.1
 tqdm==4.64.1
 urllib3==1.26.13
+ipaddress==1.0.23
