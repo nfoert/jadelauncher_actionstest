@@ -25,23 +25,41 @@ jobs:
         name: Jade Launcher.exe
         path: dist
         
-  build-linux-binary:
 
+  build-linux-binary:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-    - name: Package Application
-      uses: JackMcKew/pyinstaller-action-linux@python3.10
+    - name: Set up Python
+      uses: actions/setup-python@v2
       with:
-        path: ./
-        spec: newJadeLauncherWINDOWS.spec
+        python-version: '3.11'
 
-    - uses: actions/upload-artifact@v2
+    - name: Install qmake and other dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qt5-qmake
+
+    - name: Create virtual environment and install dependencies
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+
+    - name: Package with PyInstaller
+      run: |
+        source venv/bin/activate
+        pyinstaller spec_file.spec
+        
+    - name: Upload .exe as an artifact
+      uses: actions/upload-artifact@v2
       with:
         name: Jade Launcher
         path: dist
+
         
   
         
