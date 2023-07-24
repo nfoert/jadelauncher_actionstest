@@ -10,7 +10,7 @@ pefile==2022.5.30
 playsound==1.2.2
 psutil==5.9.4
 pwnedpasswords==2.0.0
-pyinstaller==5.6.2
+pyinstaller>=5.12
 pyinstaller-hooks-contrib==2022.14
 PyQt5==5.15.9
 PyQt5-Qt5==5.15.2
